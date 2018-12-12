@@ -1,5 +1,5 @@
-#ifndef _NETWORK_SOCKET_HPP
-#define _NETWORK_SOCKET_HPP
+#ifndef _NETWORK_SOCKET_HPP_
+#define _NETWORK_SOCKET_HPP_
 
 #include "address.hpp"
 
@@ -26,6 +26,8 @@ public:
     bool SetReuseAddress();
     bool GetPeerName(Address &addr, int sock);
     bool GetSockName(Address* addr);
+    bool AddFlag(int flag);
+    bool SetNonBlock();
 
 private:
     int fd_;
@@ -34,4 +36,4 @@ private:
 
 }
 
-#endif //_NETWORK_SOCKET_HPP
+#endif //_NETWORK_SOCKET_HPP_

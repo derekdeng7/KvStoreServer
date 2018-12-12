@@ -123,4 +123,17 @@ namespace Network{
         }
         return false;
     }
+
+    bool Socket::AddFlag(int flag)
+    {
+        int cmd = fcntl(fd_, F_GETFL, 0);
+        assert(cmd != -1);
+        cmd |= flag;
+        return -1 != fcntl(fd_, F_SETFL, flag);
+    }
+
+    bool Socket::SetNonBlock()
+    {
+        return AddFlag(O_NONBLOCK);
+    }
 }

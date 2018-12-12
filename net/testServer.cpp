@@ -12,7 +12,7 @@ int main(int argc, char const *argv[])
     Server server(8888);
     server.Start();
 
-    server.Echo();
+    server.Running();
 
     return 0;
 }

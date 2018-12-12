@@ -1,5 +1,5 @@
-#ifndef _NETWORK_SERVER_HPP
-#define _NETWORK_SERVER_HPP
+#ifndef _NETWORK_SERVER_HPP_
+#define _NETWORK_SERVER_HPP_
 
 #include "socket.hpp"
 
@@ -14,11 +14,12 @@ public:
     void Start();
     void Close();
     int Accept();
-    void Echo();
+    void Running();
     uint16_t Port() const;
-    //std::vector<std::shared_ptr<Connection>>& Connections();
 
 private:
+    void Echo(int client_sock);
+
     uint16_t port_;
     Socket socket_;
     int buffer_size;
@@ -26,4 +27,4 @@ private:
 
 }
 
-#endif //_NETWORK_SERVER_HPP
+#endif //_NETWORK_SERVER_HPP_

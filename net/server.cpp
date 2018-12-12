@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cassert>
 #include <unistd.h>
+#include <thread>
 
 #include "server.hpp"
+#include "epoll.hpp"
 
 namespace Network{
 
@@ -14,7 +16,7 @@ namespace Network{
 
     void Server::Start()
     {
-        assert(socket_.Create() && socket_.SetReuseAddress() &&
+        assert(socket_.Create() && socket_.SetReuseAddress() && socket_.SetNonBlock() &&
                socket_.Bind(port_) && socket_.Listen());
         
         std::cout << "start to listen, waiting for connection..." << std::endl;
@@ -30,39 +32,38 @@ namespace Network{
         return socket_.Accept();
     }
 
-    void Server::Echo()
+    void Server::Running()
     {
-        while(1)
+        Epoll epoll_(socket_.Fd());
+        epoll_.Start();
+    }
+
+    void Server::Echo(int client_sock)
+    {
+        int read_size;
+        char message[buffer_size];
+
+        Address cliaddr;
+        if(!socket_.GetPeerName(cliaddr, client_sock))
         {
-            int read_size;
-            char message[buffer_size];
-            int client_sock = socket_.Accept();
-            if (client_sock == -1)
-            {
-                perror("accept failed");
-                return;
-            }
-
-            Address cliaddr;
-            if(!socket_.GetPeerName(cliaddr, client_sock))
-            {
-                perror("getname failed");
-                return;
-            }
-
-            std::cout << "[connect " << client_sock << "] " << cliaddr.ToString() << std::endl;
-
-            while( (read_size = recv(client_sock, message, buffer_size, 0)) > 0 )
-            {
-                std::cout << "[recv " << client_sock << "] " << cliaddr.ToString() << " " << message << std::endl;
-                //Send the message back to client
-                send(client_sock, message, sizeof(message), 0);
-                std::cout << "[send " << client_sock << "] " << cliaddr.ToString() << " " << message << std::endl;
-            }
-        
-            std::cout << "[disconn " << client_sock << "] " << cliaddr.ToString() << std::endl;
-            close(client_sock);
+            perror("getname failed");
+            return;
         }
+
+        std::cout << "[connect " << client_sock << "] " << cliaddr.ToString() << std::endl;
+
+        while( (read_size = recv(client_sock, message, buffer_size, 0)) > 0 )
+        {
+            std::cout << "[recv " << client_sock << "] " << cliaddr.ToString() << " " << message << std::endl;
+            
+            //Send the message back to client
+            send(client_sock, message, sizeof(message), 0);
+            std::cout << "[send " << client_sock << "] " << cliaddr.ToString() << " " << message 
+                << " from thread id : " << std::this_thread::get_id() << std::endl;
+        }
+        
+        std::cout << "[disconn " << client_sock << "] " << cliaddr.ToString() << std::endl;
+        close(client_sock);
     }
 
     uint16_t Server::Port() const
