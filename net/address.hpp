@@ -1,9 +1,11 @@
-#ifndef _EXPLORER_ADDRESS_HPP_
-#define _EXPLORER_ADDRESS_HPP_
+#ifndef _NETWORK_ADDRESS_HPP_
+#define _NETWORK_ADDRESS_HPP_
 
 #include <string>
 #include <cassert>
 #include <arpa/inet.h>
+
+#include "declear.hpp"
 
 namespace Network {
 
@@ -37,6 +39,6 @@ private:
         uint32_t ip_;
 };
 
-} // namespace Explorer
+} 
 
-#endif // _EXPLORER_ADDRESS_HPP
+#endif // _NETWORK_ADDRESS_HPP_

@@ -2,36 +2,32 @@
 #define _NETWORK_EPOLL_HPP_
 
 #include <sys/epoll.h>
+#include <vector>
+#include <fcntl.h>
+#include <iostream>
 
+#include <map>
+
+#include "channel.hpp"
+#include "declear.hpp"
+#include "define.hpp"
 #include "socket.hpp"
+
 
 namespace Network{
 
 class Epoll
 {
 public:
-    Epoll(int listenfd);
+    Epoll();
+    ~Epoll();
 
-    void Start();
-    void HandleEvents(int num, char *buf);
-    void HandleAccept();
-    void AddEvent(int fd, int state);
-    void DeleteEvent(int fd, int state);
-    void ModifyEvent(int fd, int state);
-    void DoRead(int fd, char *buf, int i);
-    void DoWrite(int fd, char *buf);
-    void SetNonBlocking(int fd);
-
-private:
-    int epfd_;
-    int listenfd_;
-    int event_size;
-    int fd_size;
-    int timeout_;
-    int buffer_size;
-
-    char *buf;
-    epoll_event *events_;
+    void DoEpoll(std::vector<Channel*>* pChannels);
+    void Update(Channel* channel);
+   
+private:   
+    int epollfd_;
+    epoll_event events_[MAX_EVENTS];
     
 };
 

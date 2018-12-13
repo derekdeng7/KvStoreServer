@@ -1,7 +1,12 @@
 #ifndef _NETWORK_SOCKET_HPP_
 #define _NETWORK_SOCKET_HPP_
 
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 #include "address.hpp"
+#include "declear.hpp"
 
 namespace Network{
 
@@ -12,11 +17,11 @@ public:
     Socket(int fd);
 
     int Fd() const;
+    sockaddr_in Serveraddr() const;
     bool Valid() const;
 
     bool Create();
     bool Bind(uint16_t port);
-    bool Connet(const Address& addr);
     bool Listen();
     int Accept();
     bool Close();
@@ -31,6 +36,7 @@ public:
 
 private:
     int fd_;
+    struct sockaddr_in servaddr_;
     static const int BACKLOG = 50;
 };
 

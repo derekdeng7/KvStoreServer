@@ -1,7 +1,15 @@
 #ifndef _NETWORK_SERVER_HPP_
 #define _NETWORK_SERVER_HPP_
 
+#include <sys/epoll.h>
+#include <map>
+
+#include "acceptor.hpp"
+#include "connection.hpp"
+#include "declear.hpp"
+#include "define.hpp"
 #include "socket.hpp"
+#include "eventLoop.hpp"
 
 namespace Network{
 
@@ -12,17 +20,16 @@ public:
     ~Server();
 
     void Start();
-    void Close();
-    int Accept();
-    void Running();
-    uint16_t Port() const;
+    void NewConnection(int sockfd, sockaddr_in addr);
 
 private:
-    void Echo(int client_sock);
-
     uint16_t port_;
-    Socket socket_;
-    int buffer_size;
+    int sockfd_;
+    epoll_event events_[MAX_EVENTS];
+    std::map<int, Connection*> connections_;
+    Acceptor* pAcceptor_;
+    EventLoop* loop_;
+    
 };
 
 }

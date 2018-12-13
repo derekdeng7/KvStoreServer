@@ -1,21 +1,23 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-
 #include "socket.hpp"
 
 namespace Network{
     
-    Socket::Socket():fd_(-1) {}
+    Socket::Socket()
+        :fd_(-1) 
+    {}
 
-    Socket::Socket(int fd):fd_(fd){}
+    Socket::Socket(int fd)
+        :fd_(fd)
+    {}
 
     int Socket::Fd() const
     {
         return fd_;
+    }
+
+    sockaddr_in Socket::Serveraddr() const
+    {
+        return servaddr_;
     }
 
     bool Socket::Valid() const
@@ -31,24 +33,12 @@ namespace Network{
 
     bool Socket::Bind(uint16_t port)
     {
-        struct sockaddr_in servaddr;
-        memset(&servaddr, 0, sizeof(servaddr));
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-        servaddr.sin_port = htons(port);
+        memset(&servaddr_, 0, sizeof(servaddr_));
+        servaddr_.sin_family = AF_INET;
+        servaddr_.sin_addr.s_addr = htonl(INADDR_ANY);
+        servaddr_.sin_port = htons(port);
 
-        return 0 == bind(fd_, (const struct sockaddr*)&servaddr, sizeof(servaddr));
-    }
-
-    bool Socket::Connet(const Address& addr)
-    {
-        struct sockaddr_in servaddr;
-        memset(&servaddr, 0, sizeof(servaddr));
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = addr.Ip();
-        servaddr.sin_port = htons(addr.Port());
-
-        return 0 == connect(fd_, (const struct sockaddr*)&servaddr, sizeof(servaddr));
+        return 0 == bind(fd_, (const struct sockaddr*)&servaddr_, sizeof(servaddr_));
     }
 
     bool Socket::Listen()
