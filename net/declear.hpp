@@ -5,8 +5,10 @@ namespace Network{
 
     class Acceptor;
     class Address;
+    class Buffer;
     class Channel;
-    class Connection;
+    class ChannelCallBack;
+    class Connector;
     class Epoll;
     class EventLoop;
     class Server;

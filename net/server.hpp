@@ -5,7 +5,7 @@
 #include <map>
 
 #include "acceptor.hpp"
-#include "connection.hpp"
+#include "connector.hpp"
 #include "declear.hpp"
 #include "define.hpp"
 #include "socket.hpp"
@@ -26,7 +26,7 @@ private:
     uint16_t port_;
     int sockfd_;
     epoll_event events_[MAX_EVENTS];
-    std::map<int, Connection*> connections_;
+    std::map<int, Connector*> connections_;
     Acceptor* pAcceptor_;
     EventLoop* loop_;
     

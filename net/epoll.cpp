@@ -32,13 +32,23 @@ namespace Network{
         }
     }
 
-    void Epoll::Update(Channel* channel)
+    void Epoll::Update(Channel* pChannel)
 	{
         struct epoll_event ev;
-        ev.data.ptr = channel;
-        ev.events = channel->GetEvents();
-        int fd = channel->GetSockfd();
-        epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev);
+        ev.data.ptr = pChannel;
+        ev.events = pChannel->GetEvents();
+        int fd = pChannel->GetSockfd();
+
+        if(pChannel->IsNewChannel())
+        {
+            pChannel->SetIsNewFlag();
+            epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev);
+        }
+        else
+        {
+            epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev);
+        }
+        
     }
     
 }

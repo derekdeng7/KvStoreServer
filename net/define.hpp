@@ -9,6 +9,7 @@ namespace Network{
     const int MAX_EVENTS = 1024;
     const int FD_SIZE = 1024;
     const int BUF_SIZE = 1024;
+    const int MESSAGE_SIZE = 1024;
 }
 
 #endif //_NETWORK_DEFINE_HPP_

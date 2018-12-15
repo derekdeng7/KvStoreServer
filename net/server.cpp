@@ -22,7 +22,7 @@ namespace Network{
 
     void Server::NewConnection(int sockfd, sockaddr_in addr)
     {
-        Connection* conn = new Connection(sockfd, addr, loop_);
+        Connector* conn = new Connector(sockfd, addr, loop_);
         connections_[sockfd] = conn;
     }
 

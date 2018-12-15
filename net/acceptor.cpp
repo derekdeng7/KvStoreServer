@@ -19,7 +19,7 @@ namespace Network{
         listenfd_ = InitListenfd();
 
         pAcceptChannel_ = new Channel(listenfd_, socket_->Serveraddr(), loop_);
-        pAcceptChannel_->SetAcceptCallBack(this);
+        pAcceptChannel_->SetCallBack(this);
         pAcceptChannel_->EnableReading();
     }
 
@@ -28,7 +28,7 @@ namespace Network{
         pServerCallBack_ = pServerCallBack;
     }
 
-    void Acceptor::HandleCallBack(int socket)
+    void Acceptor::HandleReading()
     {
         int connfd;
         struct sockaddr_in cliaddr;
@@ -53,6 +53,9 @@ namespace Network{
 
         pServerCallBack_->NewConnection(connfd, cliaddr);
     }
+
+    void Acceptor::HandleWriting()
+    {}
 
     int Acceptor::InitListenfd()
     {

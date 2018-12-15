@@ -4,10 +4,8 @@
 #include <sys/epoll.h>
 #include <iostream>
 
-#include "acceptor.hpp"
-#include "callBack.hpp"
 #include "channel.hpp"
-#include "connection.hpp"
+#include "channelCallBack.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 
@@ -18,22 +16,26 @@ class Channel{
 public:
     Channel(int sockfd, sockaddr_in addr, EventLoop* loop);
     ~Channel();
-    void SetAcceptCallBack(Acceptor* acceptorCallBack);
-    void SetConnectCallBack(Connection* connectCallBack);
+    void SetCallBack(ChannelCallBack* pCallBack);
     void HandleEvent();
     void SetRevents(int revent);
+    void SetIsNewFlag();
     void EnableReading();
-    int GetEvents();
-    int GetSockfd();
+    void EnableWriting();
+    void DisableWriting();
+    bool IsWriting() const;
+    bool IsNewChannel() const;
+    int GetEvents() const;
+    int GetSockfd() const;
 
 private:
     void Update();
     int sockfd_;
     int event_;
     int revent_;
+    bool isNew_;
     sockaddr_in addr_;
-    Acceptor* acceptorCallBack_;
-    Connection* connectCallBack_;
+    ChannelCallBack* pCallBack_;
     EventLoop* loop_;
 
 };

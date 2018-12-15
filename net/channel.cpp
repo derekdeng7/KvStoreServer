@@ -6,44 +6,32 @@ namespace Network{
        :sockfd_(sockfd),
         event_(0),
         revent_(0),
+        isNew_(true),
         addr_(addr),
-        acceptorCallBack_(NULL),
-        connectCallBack_(NULL),
+        pCallBack_(NULL),
         loop_(loop)
     {}
 
     Channel::~Channel()
     {}
 
-    void Channel::SetAcceptCallBack(Acceptor* acceptorCallBack)
+    void Channel::SetCallBack(ChannelCallBack* pCallBack)
     {
-        acceptorCallBack_ = acceptorCallBack;
-    }
-
-    void Channel::SetConnectCallBack(Connection* connectCallBack)
-    {
-        connectCallBack_ = connectCallBack;
+        pCallBack_ = pCallBack;
     }
 
     void Channel::HandleEvent()
     {
         if(revent_ & EPOLLIN)
         {
-            if((acceptorCallBack_ == NULL && connectCallBack_ == NULL) ||
-                (acceptorCallBack_ != NULL && connectCallBack_ != NULL))
-            {
-                perror("fail to handle event from a error channel");
-                return;
-            }
-
-            if(acceptorCallBack_ != NULL)
-            {
-                acceptorCallBack_->HandleCallBack(sockfd_);
-            }
-            else if(connectCallBack_ != NULL)
-            {
-                connectCallBack_->HandleCallBack(sockfd_);
-            }
+            //std::cout << "Channel::HandleEvent EPOLLIN" << std::endl;
+            pCallBack_->HandleReading();
+        }
+        
+        if(revent_ & EPOLLOUT)
+        {
+            std::cout << "Channel::HandleEvent EPOLLOUT" << std::endl;
+            pCallBack_->HandleWriting();
         }
     }
 
@@ -52,18 +40,45 @@ namespace Network{
         revent_ = revent;
     }
 
+    void Channel::SetIsNewFlag()
+    {
+        isNew_ = false;
+    }
+
     void Channel::EnableReading()
     {
         event_ |= EPOLLIN;
         Update();
     }
 
-    int Channel::GetEvents()
+    void Channel::EnableWriting()
+    {
+        event_ |= EPOLLOUT;
+        Update();
+    }
+
+    void Channel::DisableWriting()
+    {
+        event_ &= ~EPOLLOUT;
+        Update();
+    }
+
+    bool Channel::IsWriting() const
+    {
+        return event_ & EPOLLOUT;
+    }
+
+    bool Channel::IsNewChannel() const
+    {
+        return isNew_;
+    }
+
+    int Channel::GetEvents() const
     {
         return event_;
     }
 
-    int Channel::GetSockfd()
+    int Channel::GetSockfd() const
     {
         return sockfd_;
     }
