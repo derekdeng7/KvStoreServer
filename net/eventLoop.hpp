@@ -4,12 +4,15 @@
 #include <vector>
 #include <sys/eventfd.h>
 #include <netinet/in.h>
+#include <mutex>
+#include <thread>
 
 #include "channel.hpp"
 #include "channelCallBack.hpp"
 #include "connector.hpp"
 #include "declear.hpp"
 #include "epoll.hpp"
+#include "task.hpp"
 
 namespace Network{
 
@@ -21,7 +24,9 @@ public:
 
     void Loop();
     void Update(Channel* channel);
-    void queueLoop(Connector* connector);
+    void queueInLoop(TaskInEventLoop& task);
+    void runInLoop(TaskInEventLoop& task);
+    bool isInLoopThread();
 
     void virtual HandleReading();
     void virtual HandleWriting();  
@@ -32,10 +37,13 @@ private:
     void DoPendingFunctors();
 
     bool quit_;
+    bool callingPendingFunctors_;
     Epoll* epoller_;
     int eventfd_;
-    Channel* wakeupChannel_;
-    std::vector<Connector*> pendingFunctors_;
+    const size_t threadid_;
+    std::mutex mutex_;
+    Channel* eventfdChannel_;
+    std::vector<TaskInEventLoop> pendingFunctors_;
 };
 
 }

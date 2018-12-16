@@ -4,14 +4,15 @@ namespace Network{
 
     EventLoop::EventLoop()
        :quit_(false),
-        epoller_(new Epoll())
+        epoller_(new Epoll()),
+        threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id()))
     {
         eventfd_ = CreateEventfd();
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
-        wakeupChannel_ = new Channel(eventfd_, addr, this);
-        wakeupChannel_->SetCallBack(this);
-        wakeupChannel_->EnableReading();
+        eventfdChannel_ = new Channel(eventfd_, addr, this);
+        eventfdChannel_->SetCallBack(this);
+        eventfdChannel_->EnableReading();
     }
     
     EventLoop::~EventLoop()
@@ -40,11 +41,35 @@ namespace Network{
         epoller_->Update(channel);
     }
 
-    void EventLoop::queueLoop(Connector* connector)
+    void EventLoop::queueInLoop(TaskInEventLoop& task)
     {
         //std::cout << "EventLoop::queueLoop" << std::endl;
-        pendingFunctors_.push_back(connector);
-        WakeUp();
+        {
+            std::unique_lock<std::mutex> locker(mutex_);
+            pendingFunctors_.push_back(task);
+        }
+        
+        if(!isInLoopThread() || callingPendingFunctors_)
+        {
+            WakeUp();
+        }     
+    }
+
+    void EventLoop::runInLoop(TaskInEventLoop& task)
+    {
+        if(isInLoopThread())
+        {
+            task.processTask();
+        }
+        else
+        {
+            queueInLoop(task);
+        }
+    }
+
+    bool EventLoop::isInLoopThread()
+    {
+        return threadid_ == std::hash<std::thread::id>{}(std::this_thread::get_id());
     }
 
     void EventLoop::HandleReading()
@@ -86,11 +111,18 @@ namespace Network{
     void EventLoop::DoPendingFunctors()
     {
         //std::cout << "EventLoop::DoPendingFunctors" << std::endl;
-        std::vector<Connector*> tempVec;
-        tempVec.swap(pendingFunctors_);
+        std::vector<TaskInEventLoop> tempVec;
+        callingPendingFunctors_ = true;
+
+        {
+            std::unique_lock<std::mutex> locker(mutex_);
+            tempVec.swap(pendingFunctors_);
+        }
+        
         for(auto it = tempVec.begin(); it != tempVec.end(); it++)
         {
-            (*it)->WriteComplete();
+            (*it).processTask();
         }
+        callingPendingFunctors_ = false;
     }
 }

@@ -18,7 +18,8 @@ public:
     Connector(int sockfd, sockaddr_in addr, EventLoop* loop);
     ~Connector();
 
-    void Send(std::string message);
+    void Send(const std::string& message);
+    void SendInLoop(const std::string& message);
     void WriteComplete();
 
     void virtual HandleReading();

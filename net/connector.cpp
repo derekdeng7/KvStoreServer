@@ -1,4 +1,5 @@
 #include "connector.hpp"
+#include "threadPool.hpp"
 
 namespace Network{
 
@@ -18,9 +19,22 @@ namespace Network{
     Connector::~Connector()
     {}
 
-    void Connector::Send(std::string message)
+    void Connector::Send(const std::string& message)
     {
         //std::cout << "Connector::Send" << std::endl;
+        if(loop_->isInLoopThread())
+        {
+            SendInLoop(message);
+        }
+        else
+        {
+            TaskInEventLoop task(this, message);
+            loop_->runInLoop(task);
+        }
+    }
+
+    void Connector::SendInLoop(const std::string& message)
+    {
         int n = 0;
         if(sendBuf_->DataSize() == 0)
         {
@@ -32,7 +46,11 @@ namespace Network{
             }
 
             if(n == static_cast<int>(message.size()))
-                loop_->queueLoop(this);
+            {
+                TaskInEventLoop task(this);
+                loop_->queueInLoop(task);
+            }
+                
         }
 
         if(n < static_cast<int>(message.size()))
@@ -78,24 +96,15 @@ namespace Network{
         }
         else
         {
+            std::string message;
             std::string strbuf(buf);
             recvBuf_->Append(strbuf);
-            std::cout << "[i] receive from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << " : " << recvBuf_ << std::endl; 
+            std::cout << "[i] receive from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
             
-            while(recvBuf_->DataSize() > 0)
-            {
-                if(recvBuf_->DataSize() >= MESSAGE_SIZE)
-                {
-                    std::string message = recvBuf_->RetriveAsString(MESSAGE_SIZE);
-                    this->Send(message);
-                }
-                else
-                {
-                    std::string message = recvBuf_->RetriveAllAsString();
-                    this->Send(message);
-                }
-                
-            }
+            TaskInSyncQueue task(this, recvBuf_->RetriveAllAsString());
+            ThreadPool* thdPool = ThreadPool::getInstance();
+            thdPool->AddTask(task);
+            
             /*
             if(write(sockfd, buf, read_size) != read_size)
             {
@@ -115,7 +124,7 @@ namespace Network{
             if(n > 0)
             {
                 std::cout << "write " << n << " bytes data again" << std::endl;
-                sendBuf_->Retrieve(n);
+                sendBuf_->Retrieve(n); 
                 if(sendBuf_->DataSize() == 0)
                 {
                     pChannel_->DisableWriting();

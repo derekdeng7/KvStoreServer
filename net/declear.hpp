@@ -13,6 +13,10 @@ namespace Network{
     class EventLoop;
     class Server;
     class Socket;
+    class SyncQueue;
+    class TaskInEventLoop;
+    class TaskInSyncQueue;
+    class ThreadPool;
 }
 
 #endif //_NETWORK_DECLEAR_HPP_
