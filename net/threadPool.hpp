@@ -1,5 +1,5 @@
-#ifndef _NETWORK_THREADPOOL_HPP
-#define _NETWORK_THREADPOOL_HPP
+#ifndef _KVSTORESERVER_THREADPOOL_HPP
+#define _KVSTORESERVER_THREADPOOL_HPP
 
 #include <vector>
 #include <thread>
@@ -9,7 +9,7 @@
 
 #include"syncQueue.hpp"
 
-namespace Network {
+namespace KvStoreServer {
 
 	class ThreadPool
 	{
@@ -48,4 +48,4 @@ namespace Network {
 	};
 }
 
-#endif //_NETWORK_THREADPOOL_HPP
+#endif //_KVSTORESERVER_THREADPOOL_HPP

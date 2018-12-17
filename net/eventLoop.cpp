@@ -1,22 +1,28 @@
 #include "eventLoop.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
     EventLoop::EventLoop()
        :quit_(false),
-        epoller_(new Epoll()),
-        threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id()))
+        epoller_(std::make_shared<Epoll>()),
+        eventfd_(CreateEventfd()),
+        threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id())),
+        eventfdChannel_(nullptr)
     {
-        eventfd_ = CreateEventfd();
-        sockaddr_in addr;
-        memset(&addr, 0, sizeof(addr));
-        eventfdChannel_ = new Channel(eventfd_, addr, this);
-        eventfdChannel_->SetCallBack(this);
-        eventfdChannel_->EnableReading();
+        
     }
     
     EventLoop::~EventLoop()
     {}
+
+    void EventLoop::Start()
+    {
+        sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        eventfdChannel_ = std::make_shared<Channel>(eventfd_, addr, shared_from_this());
+        eventfdChannel_->SetCallback(shared_from_this());
+        eventfdChannel_->EnableReading();
+    }
 
     void EventLoop::Loop()
     {

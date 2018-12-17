@@ -1,22 +1,22 @@
-#ifndef _NETWORK_CHANNEL_HPP_
-#define _NETWORK_CHANNEL_HPP_
+#ifndef _KVSTORESERVER_CHANNEL_HPP_
+#define _KVSTORESERVER_CHANNEL_HPP_
 
 #include <sys/epoll.h>
 #include <iostream>
 
 #include "channel.hpp"
-#include "channelCallBack.hpp"
+#include "channelCallback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
 class Channel{
 
 public:
-    Channel(int sockfd, sockaddr_in addr, EventLoop* loop);
+    Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
     ~Channel();
-    void SetCallBack(ChannelCallBack* pCallBack);
+    void SetCallback(std::shared_ptr<ChannelCallback> pCallback);
     void HandleEvent();
     void SetRevents(int revent);
     void SetIsNewFlag();
@@ -35,11 +35,11 @@ private:
     int revent_;
     bool isNew_;
     sockaddr_in addr_;
-    ChannelCallBack* pCallBack_;
-    EventLoop* loop_;
+    std::shared_ptr<ChannelCallback> pCallback_;
+    std::shared_ptr<EventLoop> loop_;
 
 };
 
 }
 
-#endif //_NETWORK_CHANNEL_HPP_
+#endif //_KVSTORESERVER_CHANNEL_HPP_

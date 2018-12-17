@@ -1,6 +1,6 @@
 #include "socket.hpp"
 
-namespace Network{
+namespace KvStoreServer{
     
     Socket::Socket()
         :fd_(-1) 

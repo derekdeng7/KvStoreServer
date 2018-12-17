@@ -1,23 +1,23 @@
 #include "channel.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
-    Channel::Channel(int sockfd, sockaddr_in addr, EventLoop* loop)
+    Channel::Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
        :sockfd_(sockfd),
         event_(0),
         revent_(0),
         isNew_(true),
         addr_(addr),
-        pCallBack_(NULL),
+        pCallback_(nullptr),
         loop_(loop)
     {}
 
     Channel::~Channel()
     {}
 
-    void Channel::SetCallBack(ChannelCallBack* pCallBack)
+    void Channel::SetCallback(std::shared_ptr<ChannelCallback> pCallback)
     {
-        pCallBack_ = pCallBack;
+        pCallback_ = pCallback;
     }
 
     void Channel::HandleEvent()
@@ -25,13 +25,13 @@ namespace Network{
         if(revent_ & EPOLLIN)
         {
             //std::cout << "Channel::HandleEvent EPOLLIN" << std::endl;
-            pCallBack_->HandleReading();
+            pCallback_->HandleReading();
         }
         
         if(revent_ & EPOLLOUT)
         {
-            std::cout << "Channel::HandleEvent EPOLLOUT" << std::endl;
-            pCallBack_->HandleWriting();
+            //std::cout << "Channel::HandleEvent EPOLLOUT" << std::endl;
+            pCallback_->HandleWriting();
         }
     }
 

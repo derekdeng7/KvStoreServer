@@ -1,23 +1,26 @@
 #include "connector.hpp"
 #include "threadPool.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
-    Connector::Connector(int sockfd, sockaddr_in addr, EventLoop* loop)
+    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
        :sockfd_(sockfd),
         addr_(addr),
-        pChannel_(NULL),
+        pChannel_(nullptr),
         loop_(loop),
-        recvBuf_(new Buffer()),
-        sendBuf_(new Buffer())     
-    {
-        pChannel_ = new Channel(sockfd_, addr_, loop_);
-        pChannel_->SetCallBack(this);
-        pChannel_->EnableReading();
-    }
+        recvBuf_(std::make_shared<Buffer>()),
+        sendBuf_(std::make_shared<Buffer>())     
+    {}
 
     Connector::~Connector()
     {}
+
+    void Connector::Start()
+    {
+        pChannel_ = std::make_shared<Channel>(sockfd_, addr_, loop_);
+        pChannel_->SetCallback(shared_from_this());
+        pChannel_->EnableReading();
+    }
 
     void Connector::Send(const std::string& message)
     {
@@ -28,7 +31,7 @@ namespace Network{
         }
         else
         {
-            TaskInEventLoop task(this, message);
+            TaskInEventLoop task(shared_from_this(), message);
             loop_->runInLoop(task);
         }
     }
@@ -47,7 +50,7 @@ namespace Network{
 
             if(n == static_cast<int>(message.size()))
             {
-                TaskInEventLoop task(this);
+                TaskInEventLoop task(shared_from_this());
                 loop_->queueInLoop(task);
             }
                 
@@ -101,7 +104,7 @@ namespace Network{
             recvBuf_->Append(strbuf);
             std::cout << "[i] receive from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
             
-            TaskInSyncQueue task(this, recvBuf_->RetriveAllAsString());
+            TaskInSyncQueue task(shared_from_this(), recvBuf_->RetriveAllAsString());
             ThreadPool* thdPool = ThreadPool::getInstance();
             thdPool->AddTask(task);
             

@@ -2,7 +2,7 @@
 
 const int MaxTaskCount = 100;
 
-namespace Network {
+namespace KvStoreServer {
 
 	ThreadPool::Object_Creator ThreadPool::object_creator_;
 

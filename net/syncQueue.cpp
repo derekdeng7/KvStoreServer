@@ -1,16 +1,12 @@
 #include "syncQueue.hpp"
 
-namespace Network {
+namespace KvStoreServer {
 
-	SyncQueue::SyncQueue(int maxSize) : maxSize_(maxSize), needStop_(false)
-	{
-		
-	}
+	SyncQueue::SyncQueue(size_t maxSize) : maxSize_(maxSize), needStop_(false)
+	{}
 
 	SyncQueue::~SyncQueue()
-	{
-		std::cout << "[i] thread id :" << std::this_thread::get_id() << " deconstructor SyncQueue..." << std::endl;
-	}
+	{}
 
 	void SyncQueue::Put(const TaskInSyncQueue& task)
 	{

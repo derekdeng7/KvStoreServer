@@ -1,29 +1,30 @@
 #include "task.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
-    Task::Task(Connector* pConnector, std::string message) :
+    Task::Task(std::shared_ptr<Connector> pConnector, std::string message) :
         pConnector_(pConnector), message_(message)
     {
 
     }
 
-    Connector* Task::getConnector() const
+    std::shared_ptr<Connector> Task::getConnector() const
     {
         return this->pConnector_;
     }
+
     std::string Task::getMessage() const
     {
         return this->message_;
     }
     
-    TaskInEventLoop::TaskInEventLoop(Connector* pConnector) : 
+    TaskInEventLoop::TaskInEventLoop(std::shared_ptr<Connector> pConnector) : 
         Task(pConnector, "NULL")
     {
 
     }
 
-    TaskInEventLoop::TaskInEventLoop(Connector* pConnector, std::string message) :
+    TaskInEventLoop::TaskInEventLoop(std::shared_ptr<Connector> pConnector, std::string message) :
         Task(pConnector, message)
     {
 
@@ -31,7 +32,7 @@ namespace Network{
 
     void TaskInEventLoop::processTask()
     {
-        Connector* pConnector = getConnector();
+        std::shared_ptr<Connector> pConnector = getConnector();
         std::string message = getMessage();
         if(message == "NULL")
         {
@@ -43,7 +44,7 @@ namespace Network{
         }
     }
 
-    TaskInSyncQueue::TaskInSyncQueue(Connector* pConnector, std::string message) :
+    TaskInSyncQueue::TaskInSyncQueue(std::shared_ptr<Connector> pConnector, std::string message) :
         Task(pConnector, message)
     {
 
@@ -51,7 +52,7 @@ namespace Network{
 
     void TaskInSyncQueue::processTask()
     {
-        Connector* pConnector = getConnector();
+        std::shared_ptr<Connector> pConnector = getConnector();
         std::string message = getMessage();
 
         //do anything you want!!!

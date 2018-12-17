@@ -1,12 +1,12 @@
-#ifndef _NETWORK_BUFFER_HPP_
-#define _NETWORK_BUFFER_HPP_
+#ifndef _KVSTORESERVER_BUFFER_HPP_
+#define _KVSTORESERVER_BUFFER_HPP_
 
 #include <string>
 
 #include "declear.hpp"
 #include "define.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
 class Buffer
 {
@@ -28,4 +28,4 @@ private:
 
 }
 
-#endif //_NETWORK_BUFFER_HPP_
+#endif //_KVSTORESERVER_BUFFER_HPP_

@@ -1,5 +1,5 @@
-#ifndef _NETWORK_EPOLL_HPP_
-#define _NETWORK_EPOLL_HPP_
+#ifndef _KVSTORESERVER_EPOLL_HPP_
+#define _KVSTORESERVER_EPOLL_HPP_
 
 #include <sys/epoll.h>
 #include <vector>
@@ -14,7 +14,7 @@
 #include "socket.hpp"
 
 
-namespace Network{
+namespace KvStoreServer{
 
 class Epoll
 {
@@ -33,4 +33,4 @@ private:
 
 }
 
-#endif //_NETWORK_EPOLL_HPP_
+#endif //_KVSTORESERVER_EPOLL_HPP_

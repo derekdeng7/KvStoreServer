@@ -1,13 +1,13 @@
-#ifndef _NETWORK_DECLEAR_HPP_
-#define _NETWORK_DECLEAR_HPP_
+#ifndef _KVSTORESERVER_DECLEAR_HPP_
+#define _KVSTORESERVER_DECLEAR_HPP_
 
-namespace Network{
+namespace KvStoreServer{
 
     class Acceptor;
     class Address;
     class Buffer;
     class Channel;
-    class ChannelCallBack;
+    class ChannelCallback;
     class Connector;
     class Epoll;
     class EventLoop;
@@ -19,4 +19,4 @@ namespace Network{
     class ThreadPool;
 }
 
-#endif //_NETWORK_DECLEAR_HPP_
+#endif //_KVSTORESERVER_DECLEAR_HPP_

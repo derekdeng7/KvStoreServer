@@ -1,40 +1,42 @@
-#ifndef _NETWORK_ACCEPTOR_HPP_
-#define _NETWORK_ACCEPTOR_HPP_
+#ifndef _KVSTORESERVER_ACCEPTOR_HPP_
+#define _KVSTORESERVER_ACCEPTOR_HPP_
 
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdexcept>
+#include <memory>
 
 #include "channel.hpp"
-#include "channelCallBack.hpp"
+#include "channelCallback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 #include "server.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
-class Acceptor : public ChannelCallBack
-{
-public:
-    Acceptor(EventLoop* loop, uint16_t port);
-    ~Acceptor();
+    class Acceptor : public ChannelCallback,
+                     public std::enable_shared_from_this<Acceptor>
+    {
+    public:
+        Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port);
+        ~Acceptor();
 
-    void Start();
-    void SetConnectCallBack(Server* pServerCallBack);
-    void virtual HandleReading();
-    void virtual HandleWriting();
+        void Start();
+        void SetCallback(std::shared_ptr<Server> pServerCallback);
+        void virtual HandleReading();
+        void virtual HandleWriting();
 
-private:
-    int InitListenfd();
-    bool SetNonBlocking(int fd);
+    private:
+        int InitListenfd();
+        bool SetNonBlocking(int fd);
 
-    Socket* socket_;
-    uint16_t port_;
-    int listenfd_;
-    Channel* pAcceptChannel_;
-    Server* pServerCallBack_;
-    EventLoop* loop_; 
-};
+        std::shared_ptr<Socket> socket_;
+        uint16_t port_;
+        int listenfd_;
+        std::shared_ptr<Channel> pAcceptChannel_;
+        std::shared_ptr<Server> pServerCallback_;
+        std::shared_ptr<EventLoop> loop_; 
+    };
 }
 
-#endif  //_NETWORK_ACCEPTOR_HPP_
+#endif  //_KVSTORESERVER_ACCEPTOR_HPP_

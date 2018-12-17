@@ -1,6 +1,6 @@
 #include "buffer.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
     Buffer::Buffer()
     {}

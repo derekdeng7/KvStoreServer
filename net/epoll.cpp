@@ -1,6 +1,6 @@
 #include "epoll.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
     Epoll::Epoll()
 	{

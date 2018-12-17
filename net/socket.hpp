@@ -1,5 +1,5 @@
-#ifndef _NETWORK_SOCKET_HPP_
-#define _NETWORK_SOCKET_HPP_
+#ifndef _KVSTORESERVER_SOCKET_HPP_
+#define _KVSTORESERVER_SOCKET_HPP_
 
 #include <string.h>
 #include <unistd.h>
@@ -8,7 +8,7 @@
 #include "address.hpp"
 #include "declear.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
 class Socket
 {
@@ -42,4 +42,4 @@ private:
 
 }
 
-#endif //_NETWORK_SOCKET_HPP_
+#endif //_KVSTORESERVER_SOCKET_HPP_

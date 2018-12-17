@@ -1,5 +1,5 @@
-#ifndef _NETWORK_QYNCQUEUE_HPP
-#define _NETWORK_QYNCQUEUE_HPP
+#ifndef _KVSTORESERVER_QYNCQUEUE_HPP
+#define _KVSTORESERVER_QYNCQUEUE_HPP
 
 #include <iostream>
 #include<list>
@@ -11,12 +11,12 @@
 
 #include "task.hpp"
 
-namespace Network {
+namespace KvStoreServer {
 
 	class SyncQueue
 	{
 	public:
-		SyncQueue(int MaxTaskCount);
+		SyncQueue(size_t MaxTaskCount);
 		~SyncQueue();
 		SyncQueue(const SyncQueue&);
 		SyncQueue& operator=(const SyncQueue&);
@@ -39,11 +39,11 @@ namespace Network {
     	std::mutex mutex_; 
     	std::condition_variable notEmpty_;
     	std::condition_variable notFull_; 
-    	int maxSize_; 
+    	size_t maxSize_; 
 
     	bool needStop_; 
 	};	
 
 }
 
-#endif //_NETWORK_QYNCQUEUE_HPP
+#endif //_KVSTORESERVER_QYNCQUEUE_HPP

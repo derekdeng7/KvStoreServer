@@ -1,12 +1,12 @@
 #include "server.hpp"
 #include "epoll.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
     Server::Server(uint16_t port)
        :port_(port),
-        pAcceptor_(NULL),
-        loop_(new EventLoop())
+        pAcceptor_(nullptr),
+        loop_(nullptr)
     {}
 
     Server::~Server()
@@ -14,15 +14,25 @@ namespace Network{
 
     void Server::Start()
     {
-        pAcceptor_ = new Acceptor(loop_, port_); 
-        pAcceptor_->SetConnectCallBack(this);
+        loop_ = std::make_shared<EventLoop>();
+        loop_->Start();
+
+        pAcceptor_ = std::make_shared<Acceptor>(loop_, port_); 
+        pAcceptor_->SetCallback(shared_from_this());
         pAcceptor_->Start();
-        loop_->Loop();
+
+        loop_->Loop();     
+    }
+
+    void Server::Stop()
+    {
+
     }
 
     void Server::NewConnection(int sockfd, sockaddr_in addr)
     {
-        Connector* conn = new Connector(sockfd, addr, loop_);
+        auto conn = std::make_shared<Connector>(sockfd, addr, loop_);
+        conn->Start();
         connections_[sockfd] = conn;
     }
 

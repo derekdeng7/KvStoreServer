@@ -1,13 +1,13 @@
 #include "acceptor.hpp"
 
-namespace Network{
+namespace KvStoreServer{
 
-    Acceptor::Acceptor(EventLoop* loop, uint16_t port)
-       :socket_(new Socket(-1)),
+    Acceptor::Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port)
+       :socket_(std::make_shared<Socket>(-1)),
         port_(port),
         listenfd_(-1),
-        pAcceptChannel_(NULL),
-        pServerCallBack_(NULL),
+        pAcceptChannel_(nullptr),
+        pServerCallback_(nullptr),
         loop_(loop)
     {}
 
@@ -18,14 +18,14 @@ namespace Network{
     {
         listenfd_ = InitListenfd();
 
-        pAcceptChannel_ = new Channel(listenfd_, socket_->Serveraddr(), loop_);
-        pAcceptChannel_->SetCallBack(this);
+        pAcceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
+        pAcceptChannel_->SetCallback(shared_from_this());
         pAcceptChannel_->EnableReading();
     }
-
-    void Acceptor::SetConnectCallBack(Server* pServerCallBack)
+    
+    void Acceptor::SetCallback(std::shared_ptr<Server> pServerCallback)
     {
-        pServerCallBack_ = pServerCallBack;
+        pServerCallback_ = pServerCallback;
     }
 
     void Acceptor::HandleReading()
@@ -51,7 +51,7 @@ namespace Network{
             return;
         }
 
-        pServerCallBack_->NewConnection(connfd, cliaddr);
+        pServerCallback_->NewConnection(connfd, cliaddr);
     }
 
     void Acceptor::HandleWriting()

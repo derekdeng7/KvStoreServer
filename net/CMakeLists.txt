@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.0)
 
 project(KvStoreServer)
 
-SET(CMAKE_CXX_COMPILER "g++")         
+set(CMAKE_CXX_COMPILER "g++")         
 
 set( CMAKE_BUILD_TYPE Debug )
 
