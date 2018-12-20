@@ -17,10 +17,11 @@ namespace KvStoreServer{
                       public std::enable_shared_from_this<Connector>
     {
     public:
-        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
+        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool);
         ~Connector();
 
         void Start();
+        void Close();
         void Send(const std::string& message);
         void SendInLoop(const std::string& message);
         void WriteComplete();
@@ -31,10 +32,11 @@ namespace KvStoreServer{
     private:
         int sockfd_;
         sockaddr_in addr_;
-        std::shared_ptr<Channel> pChannel_;
+        std::shared_ptr<Channel> channel_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Buffer> recvBuf_;
         std::shared_ptr<Buffer> sendBuf_;
+        std::shared_ptr<ThreadPool> threadPool_;
     };
 }
 

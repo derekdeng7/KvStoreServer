@@ -7,26 +7,37 @@ namespace KvStoreServer{
         epoller_(std::make_shared<Epoll>()),
         eventfd_(CreateEventfd()),
         threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id())),
-        eventfdChannel_(nullptr)
+        wakeupfdChannel_(nullptr)
     {
         
     }
     
     EventLoop::~EventLoop()
-    {}
+    {
+        wakeupfdChannel_->RemoveChannel();
+        close(eventfd_);
+    }
 
     void EventLoop::Start()
     {
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
-        eventfdChannel_ = std::make_shared<Channel>(eventfd_, addr, shared_from_this());
-        eventfdChannel_->SetCallback(shared_from_this());
-        eventfdChannel_->EnableReading();
+        wakeupfdChannel_ = std::make_shared<Channel>(eventfd_, addr, shared_from_this());
+        wakeupfdChannel_->SetCallback(shared_from_this());
+        wakeupfdChannel_->AddChannel();
+    }
+
+    void EventLoop::Close()
+    {
+        quit_ = true;
+        if(!isInLoopThread())
+        {
+            WakeUp();
+        }
     }
 
     void EventLoop::Loop()
     {
-        //std::cout << "EventLoop::Loop" << std::endl;
         while(!quit_)
         {
             std::vector<Channel*> channels;
@@ -40,16 +51,24 @@ namespace KvStoreServer{
             DoPendingFunctors();
         }
     }
-    
-    void EventLoop::Update(Channel* channel)
+
+    void EventLoop::AddChannel(Channel* channel)
     {
-        //std::cout << "EventLoop::Update" << std::endl;
-        epoller_->Update(channel);
+        epoller_->AddChannel(channel);
+    }
+
+    void EventLoop::RemoveChannel(Channel* channel)
+    {
+        epoller_->RemoveChannel(channel);
+    }
+    
+    void EventLoop::Updatechannel(Channel* channel)
+    {
+        epoller_->UpdateChannel(channel);
     }
 
     void EventLoop::queueInLoop(TaskInEventLoop& task)
     {
-        //std::cout << "EventLoop::queueLoop" << std::endl;
         {
             std::unique_lock<std::mutex> locker(mutex_);
             pendingFunctors_.push_back(task);
@@ -80,7 +99,6 @@ namespace KvStoreServer{
 
     void EventLoop::HandleReading()
     {
-        //std::cout << "EventLoop::HandleReading" << std::endl;
         uint64_t one = 1;
         ssize_t n = write(eventfd_, &one, sizeof(one));
         if(n != sizeof(one))
@@ -94,7 +112,6 @@ namespace KvStoreServer{
 
     void EventLoop::WakeUp()
     {
-        //std::cout << "EventLoop::WakeUp" << std::endl;
         uint64_t one = 1;
         ssize_t n = write(eventfd_, &one, sizeof(one));
         if(n != sizeof(one))
@@ -105,7 +122,6 @@ namespace KvStoreServer{
 
     int EventLoop::CreateEventfd()
     {
-        //std::cout << "EventLoop::CreateEventfd" << std::endl;
         int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         if(fd < 0)
         {
@@ -116,7 +132,6 @@ namespace KvStoreServer{
 
     void EventLoop::DoPendingFunctors()
     {
-        //std::cout << "EventLoop::DoPendingFunctors" << std::endl;
         std::vector<TaskInEventLoop> tempVec;
         callingPendingFunctors_ = true;
 

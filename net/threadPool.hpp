@@ -14,30 +14,16 @@ namespace KvStoreServer {
 	class ThreadPool
 	{
 	public:
-		static ThreadPool* getInstance()
-		{
-			static ThreadPool instance;
-			return &instance;
-		}
+		ThreadPool();
+		~ThreadPool();
+		ThreadPool(const ThreadPool&) = delete;
+		ThreadPool& operator =(const ThreadPool&) = delete;
 
 		void Start(int numThreads);
 		void Stop();
 		void AddTask(const TaskInSyncQueue& task);
 
 	private:
-		struct  Object_Creator
-		{
-			Object_Creator()
-			{
-				ThreadPool::getInstance();
-			};
-		};
-		static Object_Creator object_creator_;
-
-		ThreadPool();
-		~ThreadPool();
-		ThreadPool(const ThreadPool&) = delete;
-		ThreadPool& operator =(const ThreadPool&) = delete;
 		void RunInThread();
 		void StopThreadGroup();
 

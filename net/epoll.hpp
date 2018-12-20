@@ -23,7 +23,9 @@ public:
     ~Epoll();
 
     void DoEpoll(std::vector<Channel*>* pChannels);
-    void Update(Channel* pChannel);
+    void AddChannel(Channel* pChannel);
+    void RemoveChannel(Channel* pChannel);
+    void UpdateChannel(Channel* pChannel);
    
 private:   
     int epollfd_;

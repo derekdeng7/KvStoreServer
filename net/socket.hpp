@@ -10,35 +10,35 @@
 
 namespace KvStoreServer{
 
-class Socket
-{
-public:
-    Socket();
-    Socket(int fd);
+    class Socket
+    {   
+    public:
+        Socket();
+        Socket(int fd);
 
-    int Fd() const;
-    sockaddr_in Serveraddr() const;
-    bool Valid() const;
+        int Fd() const;
+        sockaddr_in Serveraddr() const;
+        bool Valid() const;
 
-    bool Create();
-    bool Bind(uint16_t port);
-    bool Listen();
-    int Accept();
-    bool Close();
+        bool Create();
+        bool Bind(uint16_t port);
+        bool Listen();
+        int Accept();
+        bool Close();
 
-    bool SetOption(int value, int optval);
-    bool GetOption(int value, int* optval);
-    bool SetReuseAddress();
-    bool GetPeerName(Address &addr, int sock);
-    bool GetSockName(Address* addr);
-    bool AddFlag(int flag);
-    bool SetNonBlock();
+        bool SetOption(int value, int optval);
+        bool GetOption(int value, int* optval);
+        bool SetReuseAddress();
+        bool GetPeerName(Address &addr, int sock);
+        bool GetSockName(Address* addr);
+        bool AddFlag(int flag);
+        bool SetNonBlock();
 
-private:
-    int fd_;
-    struct sockaddr_in servaddr_;
-    static const int BACKLOG = 50;
-};
+    private:
+        int fd_;
+        struct sockaddr_in servaddr_;
+        static const int BACKLOG = 50;
+    };
 
 }
 

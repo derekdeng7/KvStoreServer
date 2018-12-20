@@ -41,7 +41,8 @@ namespace KvStoreServer {
     	std::condition_variable notFull_; 
     	size_t maxSize_; 
 
-    	bool needStop_; 
+    	bool needStop_;
+		size_t recvAmounts_;
 	};	
 
 }

@@ -11,34 +11,35 @@
 
 namespace KvStoreServer{
 
-class Channel{
+    class Channel
+    {
+    public:
+        Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
+        ~Channel();
+        void SetCallback(std::shared_ptr<ChannelCallback> callback);
+        void AddChannel();
+        void RemoveChannel();
+        void UpdateChannel();
 
-public:
-    Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
-    ~Channel();
-    void SetCallback(std::shared_ptr<ChannelCallback> pCallback);
-    void HandleEvent();
-    void SetRevents(int revent);
-    void SetIsNewFlag();
-    void EnableReading();
-    void EnableWriting();
-    void DisableWriting();
-    bool IsWriting() const;
-    bool IsNewChannel() const;
-    int GetEvents() const;
-    int GetSockfd() const;
+        void HandleEvent();
+        void SetRevents(int revent);
+        void EnableReading();
+        void EnableWriting();
+        void DisableWriting();
+        void DisableAll();
+        bool IsWriting() const;
+        int GetEvents() const;
+        int GetSockfd() const;
 
-private:
-    void Update();
-    int sockfd_;
-    int event_;
-    int revent_;
-    bool isNew_;
-    sockaddr_in addr_;
-    std::shared_ptr<ChannelCallback> pCallback_;
-    std::shared_ptr<EventLoop> loop_;
+    private:        
+        int sockfd_;
+        int event_;
+        int revent_;
+        sockaddr_in addr_;
+        std::shared_ptr<ChannelCallback> callback_;
+        std::shared_ptr<EventLoop> loop_;
 
-};
+    };
 
 }
 

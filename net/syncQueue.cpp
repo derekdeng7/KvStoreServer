@@ -2,7 +2,10 @@
 
 namespace KvStoreServer {
 
-	SyncQueue::SyncQueue(size_t maxSize) : maxSize_(maxSize), needStop_(false)
+	SyncQueue::SyncQueue(size_t maxSize) : 
+		maxSize_(maxSize), 
+		needStop_(false),
+		recvAmounts_(0)
 	{}
 
 	SyncQueue::~SyncQueue()
@@ -93,6 +96,7 @@ namespace KvStoreServer {
 			return;
 
 		queue_.push_back(task);
+		std::cout << "recv " << ++recvAmounts_ << " in total" << std::endl;
 		notEmpty_.notify_one();
 	}
 

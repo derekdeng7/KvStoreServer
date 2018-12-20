@@ -4,13 +4,10 @@ const int MaxTaskCount = 100;
 
 namespace KvStoreServer {
 
-	ThreadPool::Object_Creator ThreadPool::object_creator_;
-
-	ThreadPool::ThreadPool() : syQueue_(MaxTaskCount)
-	{
-		int numThreads = std::thread::hardware_concurrency();
-		Start(numThreads);
-	}
+	ThreadPool::ThreadPool() : 
+		syQueue_(MaxTaskCount),
+		running_(true)
+	{}
 
 	ThreadPool::~ThreadPool(void)
 	{
@@ -19,7 +16,6 @@ namespace KvStoreServer {
 
 	void ThreadPool::Start(int numThreads)
 	{
-		running_ = true;
 		std::cout << "ThreadPool start" << std::endl;
 		for (int i = 0; i < numThreads; ++i)
 		{

@@ -32,23 +32,31 @@ namespace KvStoreServer{
         }
     }
 
-    void Epoll::Update(Channel* pChannel)
+    void Epoll::AddChannel(Channel* pChannel)
 	{
         struct epoll_event ev;
         ev.data.ptr = pChannel;
         ev.events = pChannel->GetEvents();
-        int fd = pChannel->GetSockfd();
+        int fd = pChannel->GetSockfd();     
+        epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev);       
+    }
 
-        if(pChannel->IsNewChannel())
-        {
-            pChannel->SetIsNewFlag();
-            epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev);
-        }
-        else
-        {
-            epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev);
-        }
-        
+    void Epoll::RemoveChannel(Channel* pChannel)
+	{
+        struct epoll_event ev;
+        ev.data.ptr = pChannel;
+        ev.events = pChannel->GetEvents();
+        int fd = pChannel->GetSockfd();     
+        epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, &ev);       
+    }
+
+    void Epoll::UpdateChannel(Channel* pChannel)
+	{
+        struct epoll_event ev;
+        ev.data.ptr = pChannel;
+        ev.events = pChannel->GetEvents();
+        int fd = pChannel->GetSockfd();     
+        epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev);       
     }
     
 }

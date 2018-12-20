@@ -6,26 +6,33 @@ namespace KvStoreServer{
        :socket_(std::make_shared<Socket>(-1)),
         port_(port),
         listenfd_(-1),
-        pAcceptChannel_(nullptr),
-        pServerCallback_(nullptr),
+        acceptChannel_(nullptr),
+        serverCallback_(nullptr),
         loop_(loop)
     {}
 
     Acceptor::~Acceptor()
-    {}
+    {
+        this->Close();
+    }
 
     void Acceptor::Start()
     {
         listenfd_ = InitListenfd();
 
-        pAcceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
-        pAcceptChannel_->SetCallback(shared_from_this());
-        pAcceptChannel_->EnableReading();
+        acceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
+        acceptChannel_->SetCallback(shared_from_this());
+        acceptChannel_->AddChannel();
+    }
+
+    void Acceptor::Close()
+    {
+        acceptChannel_->RemoveChannel();
     }
     
-    void Acceptor::SetCallback(std::shared_ptr<Server> pServerCallback)
+    void Acceptor::SetCallback(std::shared_ptr<Server> serverCallback)
     {
-        pServerCallback_ = pServerCallback;
+        serverCallback_ = serverCallback;
     }
 
     void Acceptor::HandleReading()
@@ -51,7 +58,7 @@ namespace KvStoreServer{
             return;
         }
 
-        pServerCallback_->NewConnection(connfd, cliaddr);
+        serverCallback_->NewConnection(connfd, cliaddr);
     }
 
     void Acceptor::HandleWriting()
