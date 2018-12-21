@@ -16,6 +16,7 @@ namespace KvStoreServer{
     class SyncQueue;
     class TaskInEventLoop;
     class TaskInSyncQueue;
+    class ThreadGuard;
     class ThreadPool;
 }
 

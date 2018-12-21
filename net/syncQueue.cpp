@@ -76,7 +76,7 @@ namespace KvStoreServer {
 	{
 		bool full = queue_.size() >= maxSize_;
 		if (full)
-			std::cout << "full, waiting, thread id: " << std::this_thread::get_id() << std::endl;
+			std::cout << "[+] full, waiting, thread id: " << std::this_thread::get_id() << std::endl;
 		return !full;
 	}
 
@@ -84,7 +84,7 @@ namespace KvStoreServer {
 	{
 		bool empty = queue_.empty();
 		if (empty)
-			std::cout << "empty, waiting, thread id: " << std::this_thread::get_id() << std::endl;
+			std::cout << "[-] empty, waiting, thread id: " << std::this_thread::get_id() << std::endl;
 		return !empty;
 	}
 
@@ -96,7 +96,7 @@ namespace KvStoreServer {
 			return;
 
 		queue_.push_back(task);
-		std::cout << "recv " << ++recvAmounts_ << " in total" << std::endl;
+		std::cout << "[i] recv " << ++recvAmounts_ << " in total" << std::endl;
 		notEmpty_.notify_one();
 	}
 

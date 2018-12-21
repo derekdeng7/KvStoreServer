@@ -4,8 +4,8 @@
 #include <sys/epoll.h>
 #include <iostream>
 
+#include "callback.hpp"
 #include "channel.hpp"
-#include "channelCallback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 
@@ -16,7 +16,7 @@ namespace KvStoreServer{
     public:
         Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
         ~Channel();
-        void SetCallback(std::shared_ptr<ChannelCallback> callback);
+
         void AddChannel();
         void RemoveChannel();
         void UpdateChannel();
@@ -24,6 +24,7 @@ namespace KvStoreServer{
         void HandleEvent();
         void SetRevents(int revent);
         void EnableReading();
+        void DisableReading();
         void EnableWriting();
         void DisableWriting();
         void DisableAll();
@@ -31,12 +32,16 @@ namespace KvStoreServer{
         int GetEvents() const;
         int GetSockfd() const;
 
+        void SetReadCallback(EventCallback callback);
+        void SetWriteCallback(EventCallback callback);
+
     private:        
         int sockfd_;
         int event_;
         int revent_;
         sockaddr_in addr_;
-        std::shared_ptr<ChannelCallback> callback_;
+        EventCallback readCallback_;
+        EventCallback writeCallback_;
         std::shared_ptr<EventLoop> loop_;
 
     };

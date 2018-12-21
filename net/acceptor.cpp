@@ -7,7 +7,6 @@ namespace KvStoreServer{
         port_(port),
         listenfd_(-1),
         acceptChannel_(nullptr),
-        serverCallback_(nullptr),
         loop_(loop)
     {}
 
@@ -21,7 +20,9 @@ namespace KvStoreServer{
         listenfd_ = InitListenfd();
 
         acceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
-        acceptChannel_->SetCallback(shared_from_this());
+        acceptChannel_->SetReadCallback(
+            std::bind(&Acceptor::HandleRead, shared_from_this())
+        );
         acceptChannel_->AddChannel();
     }
 
@@ -30,12 +31,12 @@ namespace KvStoreServer{
         acceptChannel_->RemoveChannel();
     }
     
-    void Acceptor::SetCallback(std::shared_ptr<Server> serverCallback)
+    void Acceptor::SetNewConnectionCallback(const NewConnectionCallback& callback)
     {
-        serverCallback_ = serverCallback;
+        newConnectionCallback_ = callback;
     }
 
-    void Acceptor::HandleReading()
+    void Acceptor::HandleRead()
     {
         int connfd;
         struct sockaddr_in cliaddr;
@@ -58,11 +59,16 @@ namespace KvStoreServer{
             return;
         }
 
-        serverCallback_->NewConnection(connfd, cliaddr);
+        if(newConnectionCallback_)
+        {
+            newConnectionCallback_(connfd, cliaddr);
+        }
+        else
+        {
+            close(connfd);
+        }
+            
     }
-
-    void Acceptor::HandleWriting()
-    {}
 
     int Acceptor::InitListenfd()
     {

@@ -1,79 +1,66 @@
+#include <thread>
 #include "task.hpp"
 
 namespace KvStoreServer{
 
-    Task::Task(std::shared_ptr<Connector> pConnector, std::string message) :
-        pConnector_(pConnector), message_(message)
-    {
+    Task::Task()
+    {}
 
-    }
-
-    std::shared_ptr<Connector> Task::getConnector() const
-    {
-        return this->pConnector_;
-    }
-
-    std::string Task::getMessage() const
-    {
-        return this->message_;
-    }
+    Task::Task(SendCallback sendCallback, std::string message) :
+        sendCallback_(sendCallback), message_(message)
+    {}
     
-    TaskInEventLoop::TaskInEventLoop(std::shared_ptr<Connector> pConnector) : 
-        Task(pConnector, "NULL")
-    {
+    TaskInEventLoop::TaskInEventLoop(RemoveConnectionCallback callback, int sockfd) : 
+        Task(),
+        removeConnectionCallback_(callback),
+        sockfd_(sockfd)
+    {}
 
-    }
-
-    TaskInEventLoop::TaskInEventLoop(std::shared_ptr<Connector> pConnector, std::string message) :
-        Task(pConnector, message)
-    {
-
-    }
+    TaskInEventLoop::TaskInEventLoop(SendCallback callback, std::string message) :
+        Task(callback, message)
+    {}
 
     void TaskInEventLoop::processTask()
     {
-        std::shared_ptr<Connector> pConnector = getConnector();
-        std::string message = getMessage();
-        if(message == "NULL")
+        if(sendCallback_)
         {
-            pConnector->WriteComplete();
+            sendCallback_(message_);
         }
-        else
+        else if(removeConnectionCallback_)
         {
-            pConnector->SendInLoop(message);
+            removeConnectionCallback_(sockfd_);
         }
     }
 
-    TaskInSyncQueue::TaskInSyncQueue(std::shared_ptr<Connector> pConnector, std::string message) :
-        Task(pConnector, message)
-    {
-
-    }
+    TaskInSyncQueue::TaskInSyncQueue(SendCallback callback, std::string message) :
+        Task(callback, message)
+    {}
 
     void TaskInSyncQueue::processTask()
     {
-        std::shared_ptr<Connector> pConnector = getConnector();
-        std::string message = getMessage();
-
-        //do anything you want!!!
-        
-        message = message + " from thread id:" + std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
-        Buffer tmpBuf;
-        tmpBuf.Append(message);
-        std::string str;
-        while(tmpBuf.DataSize() > 0)
+        if(sendCallback_)
         {
-            if(tmpBuf.DataSize() >= MESSAGE_SIZE)
+            //do anything you want!!!
+            message_ = message_ + " from thread id:" + std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+            Buffer tmpBuf;
+            tmpBuf.Append(message_);
+            std::string str;
+            while(tmpBuf.DataSize() > 0)
             {
-                str = tmpBuf.RetriveAsString(MESSAGE_SIZE);
+                if(tmpBuf.DataSize() >= MESSAGE_SIZE)
+                {
+                    str = tmpBuf.RetriveAsString(MESSAGE_SIZE);
+                }
+                else
+                {
+                    str = tmpBuf.RetriveAllAsString();
+                }
+                sendCallback_(str);
+                    
             }
-            else
-            {
-                str = tmpBuf.RetriveAllAsString();
-            }
-            pConnector->Send(str);
-                
         }
+
+        
     }
 
 }

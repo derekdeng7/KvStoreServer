@@ -7,7 +7,6 @@ namespace KvStoreServer{
         event_(0),
         revent_(0),
         addr_(addr),
-        callback_(nullptr),
         loop_(loop)
     {}
 
@@ -15,11 +14,6 @@ namespace KvStoreServer{
     {
         RemoveChannel();
         close(sockfd_);
-    }
-
-    void Channel::SetCallback(std::shared_ptr<ChannelCallback> callback)
-    {
-        callback_ = callback;
     }
 
     void Channel::AddChannel()
@@ -43,12 +37,12 @@ namespace KvStoreServer{
     {
         if(revent_ & EPOLLIN)
         {
-            callback_->HandleReading();
+            readCallback_();
         }
         
         if(revent_ & EPOLLOUT)
         {
-            callback_->HandleWriting();
+            writeCallback_();
         }
     }
 
@@ -60,6 +54,12 @@ namespace KvStoreServer{
     void Channel::EnableReading()
     {
         event_ |= EPOLLIN;
+        UpdateChannel();
+    }
+
+    void Channel::DisableReading()
+    {
+        event_ &= ~EPOLLIN;
         UpdateChannel();
     }
 
@@ -94,6 +94,16 @@ namespace KvStoreServer{
     int Channel::GetSockfd() const
     {
         return sockfd_;
+    }
+
+    void Channel::SetReadCallback(EventCallback callback)
+    {
+        readCallback_ = callback;
+    }
+
+    void Channel::SetWriteCallback(EventCallback callback)
+    {
+        writeCallback_ = callback;
     }
 
 }

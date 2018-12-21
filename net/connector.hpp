@@ -6,28 +6,29 @@
 #include <memory>
 
 #include "buffer.hpp"
+#include "callback.hpp"
 #include "channel.hpp"
-#include "channelCallback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
+#include "server.hpp"
 
 namespace KvStoreServer{
 
-    class Connector : public ChannelCallback,
-                      public std::enable_shared_from_this<Connector>
+    class Connector : public std::enable_shared_from_this<Connector>
     {
     public:
-        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool);
+        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool, std::shared_ptr<Server> server);
         ~Connector();
 
         void Start();
         void Close();
         void Send(const std::string& message);
         void SendInLoop(const std::string& message);
-        void WriteComplete();
 
-        void virtual HandleReading();
-        void virtual HandleWriting();
+        void HandleRead();
+        void HandleWrite();
+
+        void SetWriteCompleteCallback(EventCallback callback);
 
     private:
         int sockfd_;
@@ -37,6 +38,8 @@ namespace KvStoreServer{
         std::shared_ptr<Buffer> recvBuf_;
         std::shared_ptr<Buffer> sendBuf_;
         std::shared_ptr<ThreadPool> threadPool_;
+        std::shared_ptr<Server> server_;
+        WriteCompleteCallback writeCompleteCallback_;
     };
 }
 

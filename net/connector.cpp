@@ -3,14 +3,15 @@
 
 namespace KvStoreServer{
 
-    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool)
+    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool, std::shared_ptr<Server> server)
        :sockfd_(sockfd),
         addr_(addr),
         channel_(nullptr),
         loop_(loop),
         recvBuf_(std::make_shared<Buffer>()),
         sendBuf_(std::make_shared<Buffer>()),
-        threadPool_(threadPool)     
+        threadPool_(threadPool),
+        server_(server)     
     {}
 
     Connector::~Connector()
@@ -21,7 +22,12 @@ namespace KvStoreServer{
     void Connector::Start()
     {
         channel_ = std::make_shared<Channel>(sockfd_, addr_, loop_);
-        channel_->SetCallback(shared_from_this());
+        channel_->SetReadCallback(
+            std::bind(&Connector::HandleRead, shared_from_this())
+        );
+        channel_->SetWriteCallback(
+            std::bind(&Connector::HandleWrite, shared_from_this())
+        );
         channel_->AddChannel();
     }
 
@@ -32,14 +38,13 @@ namespace KvStoreServer{
 
     void Connector::Send(const std::string& message)
     {
-        //std::cout << "Connector::Send" << std::endl;
         if(loop_->isInLoopThread())
         {
             SendInLoop(message);
         }
         else
         {
-            TaskInEventLoop task(shared_from_this(), message);
+            TaskInEventLoop task(std::bind(&Connector::SendInLoop, shared_from_this(), std::placeholders::_1), message);
             loop_->runInLoop(task);
         }
     }
@@ -53,13 +58,12 @@ namespace KvStoreServer{
             n = write(sockfd_, message.c_str(), message.size());
             if(n < 0)
             {
-                std::cout << "Connector::Send() write error" << std::endl;
+                std::cout << "[!] Connector::Send() write error" << std::endl;
             }
 
             if(n == static_cast<int>(message.size()))
             {
-                TaskInEventLoop task(shared_from_this());
-                loop_->queueInLoop(task);
+                writeCompleteCallback_();
             }
                 
         }
@@ -74,14 +78,8 @@ namespace KvStoreServer{
         }
     }
 
-    void Connector::WriteComplete()
+    void Connector::HandleRead()
     {
-        std::cout << "Writing Completed!" << std::endl;
-    }
-
-    void Connector::HandleReading()
-    {
-        //std::cout << "Connector::HandleReading" << std::endl;
         int sockfd = channel_->GetSockfd();
         int read_size;
         char buf[BUF_SIZE];
@@ -102,8 +100,9 @@ namespace KvStoreServer{
         }
         else if(read_size == 0)
         {
-            std::cout << "[i] read 0, closed socket " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << std::endl; 
-            close(sockfd);
+            std::cout << "[-] read 0, closed socket " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << std::endl; 
+            TaskInEventLoop task(std::bind(&Server::CloseConnection, server_, std::placeholders::_1), sockfd);
+            loop_->queueInLoop(task);
         }
         else
         {
@@ -112,14 +111,13 @@ namespace KvStoreServer{
             recvBuf_->Append(strbuf);
             std::cout << "[i] receive from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
             
-            TaskInSyncQueue task(shared_from_this(), recvBuf_->RetriveAllAsString());
+            TaskInSyncQueue task(std::bind(&Connector::Send, shared_from_this(), std::placeholders::_1), recvBuf_->RetriveAllAsString());
             threadPool_->AddTask(task);
         }
     }
 
-    void Connector::HandleWriting()
+    void Connector::HandleWrite()
     {
-        std::cout << "Connector::HandleWriting" << std::endl;
         int sockfd = channel_->GetSockfd();
         if(channel_->IsWriting())
         {
@@ -135,6 +133,11 @@ namespace KvStoreServer{
                 }
             }
         }
+    }
+
+    void Connector::SetWriteCompleteCallback(EventCallback callback)
+    {
+        writeCompleteCallback_ = callback;
     }
 
 }

@@ -10,7 +10,7 @@
 #include <atomic>
 
 #include "channel.hpp"
-#include "channelCallback.hpp"
+#include "callback.hpp"
 #include "connector.hpp"
 #include "declear.hpp"
 #include "epoll.hpp"
@@ -18,8 +18,7 @@
 
 namespace KvStoreServer{
 
-    class EventLoop : public ChannelCallback,
-                      public std::enable_shared_from_this<EventLoop>
+    class EventLoop : public std::enable_shared_from_this<EventLoop>
     {
     public:
         EventLoop();
@@ -35,8 +34,7 @@ namespace KvStoreServer{
         void runInLoop(TaskInEventLoop& task);
         bool isInLoopThread();
 
-        void virtual HandleReading();
-        void virtual HandleWriting();  
+        void HandleRead();  
 
     private:
         void WakeUp();

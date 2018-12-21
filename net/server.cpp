@@ -1,3 +1,5 @@
+#include <functional>
+
 #include "server.hpp"
 #include "epoll.hpp"
 
@@ -25,7 +27,9 @@ namespace KvStoreServer{
         loop_->Start();
 
         Acceptor_ = std::make_shared<Acceptor>(loop_, port_); 
-        Acceptor_->SetCallback(shared_from_this());
+        Acceptor_->SetNewConnectionCallback(
+            std::bind(&Server::NewConnection, shared_from_this(), std::placeholders::_1, std::placeholders::_2)
+        );
         Acceptor_->Start();
 
         loop_->Loop();
@@ -34,19 +38,39 @@ namespace KvStoreServer{
     void Server::Close()
     {
         threadPool_->Stop();
-        ClearConnection();
+        ClearConnections();
         Acceptor_->Close();
         loop_->Close();
     }
 
-    void Server::NewConnection(int sockfd, sockaddr_in addr)
+    void Server::NewConnection(int sockfd, const sockaddr_in& addr)
     {
-        auto conn = std::make_shared<Connector>(sockfd, addr, loop_, threadPool_);
-        conn->Start();
-        connections_[sockfd] = conn;
+        auto connectChannel = std::make_shared<Connector>(sockfd, addr, loop_, threadPool_, shared_from_this());
+        connectChannel->SetWriteCompleteCallback(
+            std::bind(&Server::WriteComplete, shared_from_this())
+        );
+        connectChannel->Start();
+        connections_[sockfd] = connectChannel;
     }
 
-    void Server::ClearConnection()
+    void Server::WriteComplete()
+    {
+        std::cout << "[i] Writing Completed!" << std::endl;
+    }
+
+    void Server::CloseConnection(int sockfd)
+    {
+        auto iter = connections_.find(sockfd);
+        if(iter != connections_.end())
+        {
+            (iter->second)->Close();
+            (iter->second).reset();
+            connections_.erase(sockfd);
+            std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
+        }
+    }
+
+    void Server::ClearConnections()
     {
         auto iter = connections_.begin();
         while( iter != connections_.end())
@@ -55,7 +79,5 @@ namespace KvStoreServer{
             (iter->second).reset();
             iter++;
         }
-
-        connections_.clear();
     }
 }

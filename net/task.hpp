@@ -4,20 +4,25 @@
 #include <string>
 #include <functional>
 
-#include "connector.hpp"
+#include "buffer.hpp"
+#include "declear.hpp"
+#include "define.hpp"
 
 namespace KvStoreServer{
 
     class Task
     {
     public:
-        Task(std::shared_ptr<Connector> pConnector, std::string message);
-        std::shared_ptr<Connector> getConnector() const;
-        std::string getMessage() const;
+        typedef std::function<void(int sockfd)> RemoveConnectionCallback;
+        typedef std::function<void(std::string message)> SendCallback;
+        
+
+        Task();
+        Task(SendCallback sendCallback, std::string message);
         void virtual processTask() = 0;
 
-    private:
-        std::shared_ptr<Connector> pConnector_;
+    protected:
+        SendCallback sendCallback_;
         std::string message_;
     };
 
@@ -25,16 +30,19 @@ namespace KvStoreServer{
     class TaskInEventLoop : public Task
     {
     public:
-        TaskInEventLoop(std::shared_ptr<Connector> pConnector);
-        TaskInEventLoop(std::shared_ptr<Connector> pConnector, std::string message);
+        TaskInEventLoop(RemoveConnectionCallback callback, int sockfd);
+        TaskInEventLoop(SendCallback callback, std::string message);
         void virtual processTask();
 
+    private:
+        RemoveConnectionCallback removeConnectionCallback_;
+        int sockfd_;
     };
 
     class TaskInSyncQueue : public Task
     {
     public:
-        TaskInSyncQueue(std::shared_ptr<Connector> pConnector, std::string message);
+        TaskInSyncQueue(SendCallback callback, std::string message);
         void virtual processTask();
 
     };

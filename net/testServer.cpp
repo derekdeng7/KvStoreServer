@@ -3,14 +3,14 @@
 #include <functional>
 
 #include "server.hpp"
-#include "scopedThread.hpp"
+#include "threadGuard.hpp"
 
 using namespace KvStoreServer;
 
 int main(int argc, char const *argv[])
 {
     std::shared_ptr<Server> kvServer(new Server(8888));
-    ScopedThread thd1(std::thread(
+    ThreadGuard thd1(std::thread(
         [&kvServer]{
             kvServer->Start();
         }

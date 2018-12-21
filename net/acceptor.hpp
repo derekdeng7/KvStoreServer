@@ -6,26 +6,26 @@
 #include <stdexcept>
 #include <memory>
 
+#include "callback.hpp"
 #include "channel.hpp"
-#include "channelCallback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 #include "server.hpp"
 
 namespace KvStoreServer{
 
-    class Acceptor : public ChannelCallback,
-                     public std::enable_shared_from_this<Acceptor>
+    class Acceptor : public std::enable_shared_from_this<Acceptor>
     {
     public:
+        typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;
+
         Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port);
         ~Acceptor();
 
         void Start();
         void Close();
-        void SetCallback(std::shared_ptr<Server> ServerCallback);
-        void virtual HandleReading();
-        void virtual HandleWriting();
+        void SetNewConnectionCallback(const NewConnectionCallback& callback);
+        void HandleRead();
 
     private:
         int InitListenfd();
@@ -35,7 +35,7 @@ namespace KvStoreServer{
         uint16_t port_;
         int listenfd_;
         std::shared_ptr<Channel> acceptChannel_;
-        std::shared_ptr<Server> serverCallback_;
+        NewConnectionCallback newConnectionCallback_;
         std::shared_ptr<EventLoop> loop_; 
     };
 }

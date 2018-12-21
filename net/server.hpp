@@ -23,8 +23,10 @@ namespace KvStoreServer{
 
         void Start();
         void Close();
-        void NewConnection(int sockfd, sockaddr_in addr);
-        void ClearConnection();
+        void NewConnection(int sockfd, const sockaddr_in& addr);
+        void WriteComplete();
+        void CloseConnection(int sockfd);
+        void ClearConnections();
 
     private:
         uint16_t port_;

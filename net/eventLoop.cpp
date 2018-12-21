@@ -23,7 +23,9 @@ namespace KvStoreServer{
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         wakeupfdChannel_ = std::make_shared<Channel>(eventfd_, addr, shared_from_this());
-        wakeupfdChannel_->SetCallback(shared_from_this());
+        wakeupfdChannel_->SetReadCallback(
+            std::bind(&EventLoop::HandleRead, shared_from_this())
+        );
         wakeupfdChannel_->AddChannel();
     }
 
@@ -97,7 +99,7 @@ namespace KvStoreServer{
         return threadid_ == std::hash<std::thread::id>{}(std::this_thread::get_id());
     }
 
-    void EventLoop::HandleReading()
+    void EventLoop::HandleRead()
     {
         uint64_t one = 1;
         ssize_t n = write(eventfd_, &one, sizeof(one));
@@ -106,9 +108,6 @@ namespace KvStoreServer{
             std::cout << "EventLoop::HandleReading() reads " << n << " bytes instead of 8" << std::endl;
         } 
     }
-
-    void EventLoop::HandleWriting()
-    {}
 
     void EventLoop::WakeUp()
     {
