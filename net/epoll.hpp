@@ -11,27 +11,26 @@
 #include "channel.hpp"
 #include "declear.hpp"
 #include "define.hpp"
-#include "socket.hpp"
 
 
 namespace KvStoreServer{
 
-class Epoll
-{
-public:
-    Epoll();
-    ~Epoll();
+  class Epoll
+  {
+  public:
+      Epoll();
+      ~Epoll();
 
-    void DoEpoll(std::vector<Channel*>* pChannels);
-    void AddChannel(Channel* pChannel);
-    void RemoveChannel(Channel* pChannel);
-    void UpdateChannel(Channel* pChannel);
+      void DoEpoll(std::vector<Channel*>* pChannels);
+      void AddChannel(Channel* pChannel);
+      void RemoveChannel(Channel* pChannel);
+      void UpdateChannel(Channel* pChannel);
    
-private:   
-    int epollfd_;
-    epoll_event events_[MAX_EVENTS];
+  private:   
+      int epollfd_;
+      epoll_event events_[MAX_EVENTS];
     
-};
+  };
 
 }
 

@@ -8,8 +8,8 @@ namespace KvStoreServer{
         addr_(addr),
         channel_(nullptr),
         loop_(loop),
-        recvBuf_(std::make_shared<Buffer>()),
-        sendBuf_(std::make_shared<Buffer>()),
+        recvBuf_(new Buffer()),
+        sendBuf_(new Buffer()),
         threadPool_(threadPool),
         server_(server)     
     {}
@@ -17,16 +17,17 @@ namespace KvStoreServer{
     Connector::~Connector()
     {
         this->Close();
+        std::cout << "Connector desctruct" << std::endl;
     }
 
     void Connector::Start()
     {
         channel_ = std::make_shared<Channel>(sockfd_, addr_, loop_);
         channel_->SetReadCallback(
-            std::bind(&Connector::HandleRead, shared_from_this())
+            std::bind(&Connector::HandleRead, this)
         );
         channel_->SetWriteCallback(
-            std::bind(&Connector::HandleWrite, shared_from_this())
+            std::bind(&Connector::HandleWrite, this)
         );
         channel_->AddChannel();
     }

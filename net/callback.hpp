@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace KvStoreServer{
 
@@ -12,6 +13,8 @@ namespace KvStoreServer{
     //typedef std::function<void()> ReadCallback;
     typedef std::function<void()> WriteCompleteCallback;
     typedef std::function<void(int sockdf)> CloseConnectionCallback;
+    typedef std::function<void(int sockfd)> RemoveConnectionCallback;
+    typedef std::function<void(std::string message)> SendCallback;
 }
 
 #endif // _KVSTORESERVER_CALLBACK_HPP

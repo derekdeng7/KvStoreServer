@@ -30,10 +30,10 @@ namespace KvStoreServer{
 
     private:
         uint16_t port_;
-        int sockfd_;
-        epoll_event events_[MAX_EVENTS];
+        //int sockfd_;
+        //epoll_event events_[MAX_EVENTS];
         std::map<int, std::shared_ptr<Connector>> connections_;
-        std::shared_ptr<Acceptor> Acceptor_;
+        std::shared_ptr<Acceptor> acceptor_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<ThreadPool> threadPool_;
     };

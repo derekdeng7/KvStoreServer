@@ -21,7 +21,7 @@ namespace KvStoreServer{
 
         acceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
         acceptChannel_->SetReadCallback(
-            std::bind(&Acceptor::HandleRead, shared_from_this())
+            std::bind(&Acceptor::HandleRead, this)
         );
         acceptChannel_->AddChannel();
     }

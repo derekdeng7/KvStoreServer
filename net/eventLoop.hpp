@@ -11,7 +11,7 @@
 
 #include "channel.hpp"
 #include "callback.hpp"
-#include "connector.hpp"
+//#include "connector.hpp"
 #include "declear.hpp"
 #include "epoll.hpp"
 #include "task.hpp"

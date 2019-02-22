@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "buffer.hpp"
+#include "callback.hpp"
 #include "declear.hpp"
 #include "define.hpp"
 
@@ -13,10 +14,6 @@ namespace KvStoreServer{
     class Task
     {
     public:
-        typedef std::function<void(int sockfd)> RemoveConnectionCallback;
-        typedef std::function<void(std::string message)> SendCallback;
-        
-
         Task();
         Task(SendCallback sendCallback, std::string message);
         void virtual processTask() = 0;

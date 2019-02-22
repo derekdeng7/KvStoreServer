@@ -1,4 +1,6 @@
 #include "eventLoop.hpp"
+#include "memory.h"
+#include <unistd.h>
 
 namespace KvStoreServer{
 
@@ -24,7 +26,7 @@ namespace KvStoreServer{
         memset(&addr, 0, sizeof(addr));
         wakeupfdChannel_ = std::make_shared<Channel>(eventfd_, addr, shared_from_this());
         wakeupfdChannel_->SetReadCallback(
-            std::bind(&EventLoop::HandleRead, shared_from_this())
+            std::bind(&EventLoop::HandleRead, this)
         );
         wakeupfdChannel_->AddChannel();
     }

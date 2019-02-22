@@ -35,8 +35,8 @@ namespace KvStoreServer{
         sockaddr_in addr_;
         std::shared_ptr<Channel> channel_;
         std::shared_ptr<EventLoop> loop_;
-        std::shared_ptr<Buffer> recvBuf_;
-        std::shared_ptr<Buffer> sendBuf_;
+        std::unique_ptr<Buffer> recvBuf_;
+        std::unique_ptr<Buffer> sendBuf_;
         std::shared_ptr<ThreadPool> threadPool_;
         std::shared_ptr<Server> server_;
         WriteCompleteCallback writeCompleteCallback_;

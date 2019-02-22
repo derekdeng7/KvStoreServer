@@ -14,7 +14,7 @@
 
 namespace KvStoreServer{
 
-    class Acceptor : public std::enable_shared_from_this<Acceptor>
+    class Acceptor
     {
     public:
         typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;

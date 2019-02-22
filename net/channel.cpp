@@ -1,4 +1,5 @@
 #include "channel.hpp"
+#include "unistd.h"
 
 namespace KvStoreServer{
 

@@ -19,7 +19,7 @@ int main(int argc, char const *argv[])
     std::cout << "press any key to exit" << std::endl;
     std::cin.get();
 
-    kvServer->Close();
+    //kvServer->Close();
 
     return 0;
 }
