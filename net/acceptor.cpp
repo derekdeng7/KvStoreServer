@@ -3,7 +3,7 @@
 namespace KvStoreServer{
 
     Acceptor::Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port)
-       :socket_(std::make_shared<Socket>(-1)),
+       :socket_(new Socket(-1)),
         port_(port),
         listenfd_(-1),
         acceptChannel_(nullptr),
@@ -19,7 +19,7 @@ namespace KvStoreServer{
     {
         listenfd_ = InitListenfd();
 
-        acceptChannel_ = std::make_shared<Channel>(listenfd_, socket_->Serveraddr(), loop_);
+        acceptChannel_.reset(new Channel(listenfd_, socket_->Serveraddr(), loop_));
         acceptChannel_->SetReadCallback(
             std::bind(&Acceptor::HandleRead, this)
         );

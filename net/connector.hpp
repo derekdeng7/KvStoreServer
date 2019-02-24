@@ -6,11 +6,8 @@
 #include <memory>
 
 #include "buffer.hpp"
-#include "callback.hpp"
-#include "channel.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
-#include "server.hpp"
 
 namespace KvStoreServer{
 
@@ -33,10 +30,10 @@ namespace KvStoreServer{
     private:
         int sockfd_;
         sockaddr_in addr_;
-        std::shared_ptr<Channel> channel_;
-        std::shared_ptr<EventLoop> loop_;
+        std::unique_ptr<Channel> channel_;
         std::unique_ptr<Buffer> recvBuf_;
         std::unique_ptr<Buffer> sendBuf_;
+        std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<ThreadPool> threadPool_;
         std::shared_ptr<Server> server_;
         WriteCompleteCallback writeCompleteCallback_;

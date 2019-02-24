@@ -9,7 +9,6 @@
 #include "connector.hpp"
 #include "declear.hpp"
 #include "define.hpp"
-#include "socket.hpp"
 #include "eventLoop.hpp"
 #include "threadPool.hpp"
 
@@ -30,8 +29,6 @@ namespace KvStoreServer{
 
     private:
         uint16_t port_;
-        //int sockfd_;
-        //epoll_event events_[MAX_EVENTS];
         std::map<int, std::shared_ptr<Connector>> connections_;
         std::shared_ptr<Acceptor> acceptor_;
         std::shared_ptr<EventLoop> loop_;

@@ -9,9 +9,7 @@
 #include <memory>
 #include <atomic>
 
-#include "channel.hpp"
 #include "callback.hpp"
-//#include "connector.hpp"
 #include "declear.hpp"
 #include "epoll.hpp"
 #include "task.hpp"
@@ -43,11 +41,11 @@ namespace KvStoreServer{
 
         std::atomic_bool quit_;
         bool callingPendingFunctors_;
-        std::shared_ptr<Epoll> epoller_;
         int eventfd_;
         const size_t threadid_;
         std::mutex mutex_;
-        std::shared_ptr<Channel> wakeupfdChannel_;
+        std::unique_ptr<Epoll> epoller_;
+        std::unique_ptr<Channel> wakeupfdChannel_;
         std::vector<TaskInEventLoop> pendingFunctors_;
     };
 

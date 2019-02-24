@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "callback.hpp"
-#include "channel.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 

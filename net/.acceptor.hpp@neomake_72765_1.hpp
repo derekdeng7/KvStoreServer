@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <memory>
 
+//#include "callback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 #include "socket.hpp"

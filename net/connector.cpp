@@ -1,5 +1,5 @@
 #include "connector.hpp"
-#include "threadPool.hpp"
+#include "server.hpp"
 
 namespace KvStoreServer{
 
@@ -7,9 +7,9 @@ namespace KvStoreServer{
        :sockfd_(sockfd),
         addr_(addr),
         channel_(nullptr),
-        loop_(loop),
         recvBuf_(new Buffer()),
         sendBuf_(new Buffer()),
+        loop_(loop),
         threadPool_(threadPool),
         server_(server)     
     {}
@@ -22,7 +22,7 @@ namespace KvStoreServer{
 
     void Connector::Start()
     {
-        channel_ = std::make_shared<Channel>(sockfd_, addr_, loop_);
+        channel_.reset(new Channel(sockfd_, addr_, loop_));
         channel_->SetReadCallback(
             std::bind(&Connector::HandleRead, this)
         );
