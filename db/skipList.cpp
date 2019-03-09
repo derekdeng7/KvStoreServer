@@ -7,22 +7,27 @@
 namespace KvStoreServer{
 
     
-    SkipList::SkipList()
-      : header_(new Node()), levelNum_(1), entryNum_(0), random_(0xdeadbeef)
+    SkipList::SkipList(const size_t maxHeight, const size_t maxEntryNum)
+      : header_(new Node()), maxHeight_(maxHeight), maxEntryNum_(maxEntryNum), height_(1), entryNum_(0), random_(0xdeadbeef)
     {}
   
 
     bool SkipList::Search(const KeyType& key, ValueType& value)
     {
-        std::stack<Node*> updateStack;
-        if(FindGreaterOrEqual(key, updateStack))
+        std::stack<Node*> updateStack = FindGreaterOrEqual(key);
+
+        Node* cursor = updateStack.top();
+        Entry entry = cursor->Next()->GetEntry();
+        
+        if(entry.internalKey == key)
         {
-            Node* cursor = updateStack.top();
-            value = cursor->GetValue();
+            value = entry.value;
             return true;
         }
-
-        return false;
+        else
+        {
+            return false;
+        }
     }
 
     void SkipList::Insert(const KeyType& key, const ValueType& value)
@@ -38,15 +43,7 @@ namespace KvStoreServer{
         }
 
         //store the nodes need to link to the newNode 
-        std::stack<Node*> updateStack;
-        //the key has already existed, update
-        if(FindGreaterOrEqual(key, updateStack))
-        {
-            //we just update the bottom level
-            Node* cursor = updateStack.top();
-            cursor->SetValue(value);
-            return;
-        }
+        std::stack<Node*> updateStack = FindGreaterOrEqual(key);
 
         Node* tmpNode = nullptr;
         int height = GetRandomHeight();
@@ -64,7 +61,7 @@ namespace KvStoreServer{
                 Node* newHeader = new Node();
                 newHeader->SetDown(header_);
                 header_ = newHeader;
-                levelNum_++;
+                height_++;
                 cursor = header_;
             }
             Node* newNode = new Node(key, value);
@@ -76,58 +73,6 @@ namespace KvStoreServer{
 
     }
     
-    void SkipList::Delete(const KeyType& key)
-    {
-        std::stack<Node*> updateStack;
-        if(FindGreaterOrEqual(key, updateStack))
-        {
-            Node* cursor = updateStack.top();
-            cursor->Delete();
-        }
-    }
-
-    //not allow to be used in db
-    bool SkipList::Remove(const KeyType& key)
-    {        
-        Node* cursor = header_;
-        while(cursor != nullptr)
-        {
-            if(cursor->Next() == nullptr)
-            {
-                cursor = cursor->Down();
-            }
-            else if(key < cursor->Next()->GetKey())
-            {
-                cursor = cursor->Down();
-            }
-            else if(key > cursor->Next()->GetKey())
-            {
-                cursor = cursor->Next();
-            }
-            //find the target node
-            else
-            {
-                Node* delNode = cursor->Next();
-                cursor->SetNext(delNode->Next());
-                delete delNode;
-                //reach the lowest level;
-                if(cursor->Down() == nullptr)
-                {
-                    return true;
-                }
-                cursor = cursor->Down();
-                //this level is empty
-                if(header_->Next() == nullptr)
-                {
-                    delete header_;
-                    header_ = cursor;
-                }
-            }            
-        }
-        
-        return false;
-    }
-        
     void SkipList::ShowData() const
     {
         Node* cursor = header_;
@@ -138,10 +83,8 @@ namespace KvStoreServer{
             
             while(cursor != nullptr)
             {
-                if(!cursor->IsDeleted())
-                {
-                    std::cout << cursor->GetKey() << ":" << cursor->GetValue().str << " ";
-                }
+                Entry entry = cursor->GetEntry();
+                std::cout << entry.internalKey.key << ":" << entry.value.str << " ";
                 cursor = cursor->Next();
             }
             std::cout << std::endl;
@@ -155,18 +98,18 @@ namespace KvStoreServer{
         std::vector<Entry> result;
         Node* cursor = header_;
         //go to the bottom level
-        while(cursor->Down() != nullptr)
+        while(header_->Down() != nullptr)
         {
             //delete all the node expect those at the bottom level
-            cursor = cursor->Down();
+            header_ = header_->Down();
             while(cursor->Next() != nullptr)
             {
                 Node* delNode = cursor->Next();
                 cursor->SetNext(delNode->Next());
                 delete delNode;
             }
-            delete header_;
-            header_ = cursor;
+            delete cursor;
+            cursor = header_;
         }
 
         while(cursor->Next() != nullptr)
@@ -180,10 +123,12 @@ namespace KvStoreServer{
         return result;
     }
     
-    bool SkipList::FindGreaterOrEqual(const KeyType& key, std::stack<Node*>& updateStack)
+    std::stack<Node*> SkipList::FindGreaterOrEqual(const KeyType& key)
     {
         Node* cursor = header_;
         int searchCount = 0;
+
+        std::stack<Node*> updateStack;
 
         while(cursor != nullptr)
         {
@@ -193,46 +138,30 @@ namespace KvStoreServer{
                 updateStack.push(cursor);
                 cursor = cursor->Down();
             }
-            else if(key < cursor->Next()->GetKey())
+            else if(cursor->Next()->GetKey() >= key)
             {
                 updateStack.push(cursor);
                 cursor = cursor->Down();
             }
-            else if(key > cursor->Next()->GetKey())
+            else //if(cursor->Next()->GetKey() < key)
             {
                 cursor = cursor->Next();
             }
-            //the node has already exists
-            else
-            {
-                cursor = cursor->Next();
-                //reach the bottom level
-                while(cursor->Down() != nullptr)
-                {
-                    cursor = cursor->Down();
-                }
-                //value = cursor->Next()->GetVaule();
-                //if exists, just push the bottom one into stack
-                updateStack.push(cursor);
-                std::cout << "searchCount: " << searchCount <<std::endl;
-                return true;
-            }            
         }
-
-        return false;
+        return updateStack;
     }
 
     int SkipList::GetRandomHeight()
     {
-        int height = 1;
+        size_t height = 1;
         static const unsigned int brandching = 4;
-        while(height < MAX_LEVEL && ((random_.Next() % brandching) == 0))
+        while(height < maxHeight_ && ((random_.Next() % brandching) == 0))
         {
             height++;
         }
         
         assert(height >0);
-        assert(height <= MAX_LEVEL);
+        assert(height <= maxHeight_);
         
         return height;
     }

@@ -2,12 +2,54 @@
 #define _KVSTORESERVER_DB_ENTRY_HPP_
 
 #include <cstring>
-#include <string>
+#include <chrono>
 
 namespace KvStoreServer{
 
-    typedef size_t KeyType; 
-    //typedef std::string ValueType;
+    struct KeyType
+    {
+        size_t key;
+        size_t seqNum;
+        
+        KeyType()
+        {
+            std::chrono::microseconds ms = std::chrono::duration_cast<std::chrono::microseconds>
+              (std::chrono::system_clock::now().time_since_epoch());
+            seqNum = static_cast<size_t>(ms.count());
+        }
+
+        KeyType(const size_t k) : key(k)
+        {
+            std::chrono::microseconds ms = std::chrono::duration_cast<std::chrono::microseconds>
+              (std::chrono::system_clock::now().time_since_epoch());
+            seqNum = static_cast<size_t>(ms.count());
+        }
+
+        KeyType(const KeyType& kt)
+          : key(kt.key), seqNum(kt.seqNum)
+        {}
+
+        bool operator>(const KeyType& kt)
+        {
+            return this->key > kt.key;
+        }
+
+        bool operator<(const KeyType& kt)
+        {
+            return this->key < kt.key;
+        }
+        
+        bool operator==(const KeyType& kt)
+        {
+            return this->key == kt.key;
+        }
+
+        bool operator>=(const KeyType& kt)
+        {
+            return this->key >= kt.key;
+        }
+    };
+    
     struct ValueType 
     {
         char str[16];
@@ -27,16 +69,34 @@ namespace KvStoreServer{
 
     struct Entry
     {
-        KeyType key;
+        KeyType internalKey;
         ValueType value;
-        bool isDeleted;
         
-        Entry() : isDeleted(false) {}
-
-        Entry(const KeyType& k, const ValueType& v)
-          : key(k), value(v), isDeleted(false)
+        Entry() 
         {}
 
+        Entry(const Entry& e) 
+          : internalKey(e.internalKey), value(e.value)
+        {}
+
+        Entry(const KeyType& ik, const ValueType& v)
+          : internalKey(ik), value(v)
+        {}
+
+        bool operator>(const Entry& e)
+        {
+            return this->internalKey > e.internalKey;
+        }
+
+        bool operator<(const Entry& e)
+        {
+            return this->internalKey < e.internalKey;
+        }
+
+        bool operator==(const Entry& e)
+        {
+            return this->internalKey == e.internalKey;
+        }
     };
 }
 

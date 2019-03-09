@@ -11,8 +11,6 @@
 
 namespace KvStoreServer{
 
-    constexpr int MAX_LEVEL = 15;
-
     class Node
     { 
     public:
@@ -49,27 +47,12 @@ namespace KvStoreServer{
 
         KeyType GetKey() const
         {
-            return entry_.key;
+            return entry_.internalKey;
         }
-        
+
         ValueType GetValue() const
         {
             return entry_.value.str;
-        }
-
-        void SetValue(const ValueType& v)
-        {
-            entry_.value = v;
-        }
-
-        void Delete()
-        {
-            entry_.isDeleted = true; 
-        }
-
-        bool IsDeleted() const
-        {
-            return entry_.isDeleted; 
         }
 
     private:
@@ -81,17 +64,16 @@ namespace KvStoreServer{
     class SkipList
     {
     public:
-        SkipList();
+        SkipList(const size_t maxHeight, const size_t maxEntryNum);
+
         bool Search(const KeyType& key, ValueType& value);
         void Insert(const KeyType& key, const ValueType& value);        
-        void Delete(const KeyType& key);
-        bool Remove(const KeyType& key);
         void ShowData() const;
         std::vector<Entry> PopAllEntries();
 
-        size_t GetLevelNum() const 
+        size_t GetHeight() const 
         { 
-            return levelNum_; 
+            return height_; 
         }
 
         size_t GetEntryNum() const 
@@ -99,13 +81,19 @@ namespace KvStoreServer{
             return entryNum_;
         }
 
+        bool isFull() const
+        {
+            return entryNum_ >= maxEntryNum_;
+        }
 
     private:
-        bool FindGreaterOrEqual(const KeyType& key, std::stack<Node*>& updateStack);
+        std::stack<Node*> FindGreaterOrEqual(const KeyType& key);
         int GetRandomHeight();
 
         Node* header_;
-        size_t levelNum_;
+        const size_t maxHeight_;
+        const size_t maxEntryNum_;
+        size_t height_;
         size_t entryNum_;
         Random random_;
     };
