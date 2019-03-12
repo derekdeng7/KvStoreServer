@@ -6,35 +6,32 @@
 #include <vector>
 
 namespace KvStoreServer{
-
-    struct SSMeta
-    {
-        size_t entryNum;
-        KeyType minKey;
-        KeyType maxKey;
-    };
-    
+ 
     class SSTable
     {
     public:
-        SSTable(){}
+        //load from disk and search key
+        SSTable(const SSTableMeta& meta) 
+          : meta_(meta) 
+        {}
 
-        //only call when the immuable memtable flush into disk
-        SSTable(std::vector<Entry> entryVec) 
+        //only call when the immuable memtable dump in disk
+        SSTable(std::vector<Entry> entryVec, off_t prev) 
           : entryVec_(entryVec) 
         {
-            InitFormMemTable();
+            meta_.prev = prev;
         }
         
-        void InitFormMemTable();
-        bool LoadFromDisk();
-        bool MapRead(const KeyType& key);
+        bool SearchFromDisk(const KeyType& key, ValueType& value);
+        bool WriteInDisk();
         void ShowData() const;
+        SSTableMeta GetMeta() const
+        {
+            return this->meta_;
+        }
 
     private:
-        bool FlushInDisk();
-        char path_[64];
-        SSMeta meta_;
+        SSTableMeta meta_;
         std::vector<Entry> entryVec_;
     };
 }

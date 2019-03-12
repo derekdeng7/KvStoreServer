@@ -7,27 +7,30 @@
 namespace KvStoreServer{
 
     
-    SkipList::SkipList(const size_t maxHeight, const size_t maxEntryNum)
-      : header_(new Node()), maxHeight_(maxHeight), maxEntryNum_(maxEntryNum), height_(1), entryNum_(0), random_(0xdeadbeef)
+    SkipList::SkipList(const size_t maxHeight)
+      : header_(new Node()), maxHeight_(maxHeight), height_(1), entryNum_(0), random_(0xdeadbeef)
     {}
   
 
     bool SkipList::Search(const KeyType& key, ValueType& value)
     {
-        std::stack<Node*> updateStack = FindGreaterOrEqual(key);
-
-        Node* cursor = updateStack.top();
-        Entry entry = cursor->Next()->GetEntry();
-        
-        if(entry.internalKey == key)
-        {
-            value = entry.value;
-            return true;
-        }
-        else
+        if(entryNum_ == 0)
         {
             return false;
         }
+
+        std::stack<Node*> updateStack = FindGreaterOrEqual(key);
+
+        Node* cursor = updateStack.top();
+        if(cursor->Next() == nullptr)
+        {
+            return false;
+        }
+
+        Entry entry = cursor->Next()->GetEntry();
+        value = entry.value;
+
+        return entry.internalKey == key;
     }
 
     void SkipList::Insert(const KeyType& key, const ValueType& value)
@@ -39,6 +42,7 @@ namespace KvStoreServer{
         {
             Node* newNode = new Node(key, value);
             header_->SetNext(newNode);
+            entryNum_++;
             return;
         }
 
@@ -71,6 +75,7 @@ namespace KvStoreServer{
             tmpNode = newNode;
         }
 
+        entryNum_++;
     }
     
     void SkipList::ShowData() const
@@ -143,7 +148,7 @@ namespace KvStoreServer{
                 updateStack.push(cursor);
                 cursor = cursor->Down();
             }
-            else //if(cursor->Next()->GetKey() < key)
+            else
             {
                 cursor = cursor->Next();
             }

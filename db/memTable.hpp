@@ -8,8 +8,8 @@ namespace KvStoreServer{
     class MemTable
     {
     public:
-        MemTable(size_t maxHeight, size_t maxEntryNum) 
-          : maxHeight_(maxHeight), maxEntryNum_(maxEntryNum), table_(maxHeight_, maxEntryNum_) 
+        MemTable(size_t maxHeight) 
+          : maxHeight_(maxHeight), table_(maxHeight_) 
         {}
 
         bool Search(const KeyType& key, ValueType& value)
@@ -44,7 +44,6 @@ namespace KvStoreServer{
     
     private:
         size_t maxHeight_;
-        size_t maxEntryNum_;
         SkipList table_;
     };
 }

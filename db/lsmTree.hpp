@@ -1,78 +1,42 @@
 #ifndef _KVSTORESERVER_DB_LSMTREE_HPP_
 #define _KVSTORESERVER_DB_LSMTREE_HPP_
 
+#include "level.hpp"
 #include "memTable.hpp"
-#include "ssTable.hpp"
+
+#include <cassert>
+#include <thread>
+#include <vector>
 
 namespace KvStoreServer{
-
-    const char* DELETETAG = "ENTRYHASBEENDEL";
 
     class LSMTree   
     {
     public:
         LSMTree() 
-          : maxHeight_(15), maxEntryNum_(4096), muTable_(maxHeight_, maxEntryNum_), immuTable_(maxHeight_, maxEntryNum_)
-        {}
-
-        bool Get(const KeyType& key, ValueType& value)
+          : muTable_(new MemTable(MAXHEIGHT)), immuTable_(new MemTable(MAXHEIGHT))
         {
-            if(muTable_.Search(key, value))
-            { 
-                return true;
-            }
-            else if(immuTable_.Search(key, value))
-            { 
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            InitFromFile();
         }
 
-        void Put(const KeyType& key, const ValueType& value)
-        {
-            muTable_.Insert(key, value);
-        }
-
-
+        bool InitFromFile();
+        bool InitFromEmpty();
+        bool Get(const KeyType& key, ValueType& value);
+        void Put(const KeyType& key, const ValueType& value);
+    
         void Remove(const KeyType& key)
         {
-            muTable_.Insert(key, DELETETAG);
-        }
-
-        void ShowData()
-        {
-            muTable_.ShowData();
-        }
-
-        std::vector<Entry> PopAllEntries()
-        { 
-            return muTable_.PopAllEntries();
-        }
-
-        void FlushInDisk()
-        {
-            SSTable ssTable(PopAllEntries());
-        }
-
-        void LoadFromDisk()
-        {
-            SSTable ssTable;
-            ssTable.LoadFromDisk();
-            ssTable.ShowData();
+            Put(key, DELETETAG);
         }
 
     private:
-        //void buildImmuTable();
-        //void buildSSTable();
-        //void loadSSTable();
-
-        size_t maxHeight_;
-        size_t maxEntryNum_;
-        MemTable muTable_;
-        MemTable immuTable_;
+        bool UpdateLSMTreeMeta();
+        void FlushToDisk();
+        
+        LsmTreeMeta meta_;
+        std::vector<Level> levelVec_;
+        std::unique_ptr<MemTable> muTable_;
+        std::unique_ptr<MemTable> immuTable_;
     };
 }
 

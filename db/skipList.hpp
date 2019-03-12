@@ -14,10 +14,10 @@ namespace KvStoreServer{
     class Node
     { 
     public:
-        Node() //: pNext_(new AtomicPointer(nullptr)), pDown_(nullptr) 
+        Node() : pNext_(nullptr), pDown_(nullptr) 
         {}
 
-        Node(const KeyType& key, const ValueType& value) : entry_(key, value)
+        Node(const KeyType& key, const ValueType& value) : entry_(key, value), pNext_(nullptr), pDown_(nullptr) 
         {}
 
         Node* Next() const
@@ -64,7 +64,7 @@ namespace KvStoreServer{
     class SkipList
     {
     public:
-        SkipList(const size_t maxHeight, const size_t maxEntryNum);
+        SkipList(const size_t maxHeight);
 
         bool Search(const KeyType& key, ValueType& value);
         void Insert(const KeyType& key, const ValueType& value);        
@@ -81,18 +81,12 @@ namespace KvStoreServer{
             return entryNum_;
         }
 
-        bool isFull() const
-        {
-            return entryNum_ >= maxEntryNum_;
-        }
-
     private:
         std::stack<Node*> FindGreaterOrEqual(const KeyType& key);
         int GetRandomHeight();
 
         Node* header_;
         const size_t maxHeight_;
-        const size_t maxEntryNum_;
         size_t height_;
         size_t entryNum_;
         Random random_;

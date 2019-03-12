@@ -1,29 +1,43 @@
 #ifndef _KVSTORESERVER_DB_ENTRY_HPP_
 #define _KVSTORESERVER_DB_ENTRY_HPP_
 
-#include <cstring>
+#include <cassert>
+#include <cstdio>
 #include <chrono>
+#include <cstring>
 
 namespace KvStoreServer{
+
+    constexpr auto MANIFESTPATH = ".Manifest";
+    constexpr auto DELETETAG = "ENTRYHASBEENDEL";
+    constexpr auto MAXHEIGHT = 16;
+    constexpr auto MAXENTRYNUM = 2048;
+    constexpr auto MAXHLEVELNUM = 7;
+
+    struct SeqType
+    {
+        size_t seqNum;
+
+        SeqType()
+        {
+            std::chrono::microseconds ms = std::chrono::duration_cast<std::chrono::microseconds>
+              (std::chrono::system_clock::now().time_since_epoch());
+            seqNum = static_cast<size_t>(ms.count());
+        }
+
+    };
 
     struct KeyType
     {
         size_t key;
-        size_t seqNum;
+        SeqType seqNum;
         
         KeyType()
-        {
-            std::chrono::microseconds ms = std::chrono::duration_cast<std::chrono::microseconds>
-              (std::chrono::system_clock::now().time_since_epoch());
-            seqNum = static_cast<size_t>(ms.count());
-        }
+          :key(0)
+        {}
 
         KeyType(const size_t k) : key(k)
-        {
-            std::chrono::microseconds ms = std::chrono::duration_cast<std::chrono::microseconds>
-              (std::chrono::system_clock::now().time_since_epoch());
-            seqNum = static_cast<size_t>(ms.count());
-        }
+        {}
 
         KeyType(const KeyType& kt)
           : key(kt.key), seqNum(kt.seqNum)
@@ -34,14 +48,14 @@ namespace KvStoreServer{
             return this->key > kt.key;
         }
 
-        bool operator<(const KeyType& kt)
-        {
-            return this->key < kt.key;
+        bool operator<(const KeyType& kt) 
+        { 
+            return this->key < kt.key; 
         }
         
-        bool operator==(const KeyType& kt)
-        {
-            return this->key == kt.key;
+        bool operator==(const KeyType& kt) 
+        { 
+            return this->key == kt.key; 
         }
 
         bool operator>=(const KeyType& kt)
@@ -82,20 +96,46 @@ namespace KvStoreServer{
         Entry(const KeyType& ik, const ValueType& v)
           : internalKey(ik), value(v)
         {}
+    };
 
-        bool operator>(const Entry& e)
-        {
-            return this->internalKey > e.internalKey;
-        }
+    struct LsmTreeMeta
+    {
+        size_t levelNum;
+        size_t ssTableNum;
+        size_t entryNum;
+        off_t slot;
 
-        bool operator<(const Entry& e)
-        {
-            return this->internalKey < e.internalKey;
-        }
+        LsmTreeMeta() 
+          : levelNum(1), ssTableNum(0), entryNum(0), slot(0)
+        {}
+    };
 
-        bool operator==(const Entry& e)
+    struct LevelMeta
+    {
+        size_t ssTableNum;
+        KeyType minKey;
+        KeyType maxKey;
+        off_t firstSSTable;
+        off_t lastSSTable;
+
+        LevelMeta()
+          : ssTableNum(0), firstSSTable(0), lastSSTable(0)
+        {}
+    };
+
+    struct SSTableMeta
+    {
+        char filePath[32];
+        size_t entryNum;
+        KeyType minKey;
+        KeyType maxKey;
+        off_t prev;
+        off_t next;
+
+        SSTableMeta()
+          : entryNum(0), prev(0), next(0)
         {
-            return this->internalKey == e.internalKey;
+            bzero(filePath, sizeof(filePath));
         }
     };
 }
