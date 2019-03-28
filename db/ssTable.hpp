@@ -16,18 +16,29 @@ namespace KvStoreServer{
         {}
 
         //only call when the immuable memtable dump in disk
-        SSTable(std::vector<Entry> entryVec, off_t prev) 
+        SSTable(std::vector<Entry> entryVec) 
           : entryVec_(entryVec) 
         {
-            meta_.prev = prev;
         }
         
         bool SearchFromDisk(const KeyType& key, ValueType& value);
         bool WriteInDisk();
-        void ShowData() const;
+        std::vector<Entry> GetData();
+
         SSTableMeta GetMeta() const
         {
             return this->meta_;
+        }
+
+        bool Remove()
+        {
+            if(!remove(meta_.filePath))
+            {
+                perror("fail to remove SSTable");
+                return false;
+            }
+
+            return true;
         }
 
     private:

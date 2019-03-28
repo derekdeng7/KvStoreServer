@@ -13,14 +13,6 @@ namespace KvStoreServer{
             return InitFromEmpty();
         }
 
-        //read LevelMeta
-        size_t N = meta_.levelNum;
-        for(size_t i = 0; i < N; i++)
-        {
-            Level level(i);
-            levelVec_.push_back(std::move(level));
-        }
-
         return true;
     }
 
@@ -38,18 +30,15 @@ namespace KvStoreServer{
 
         //write LevelMeta
         offset += sizeof(LsmTreeMeta);
-        LevelMeta levelMeta;
         for(auto i = 0; i < MAXHLEVELNUM; i++, offset += sizeof(LevelMeta))
         {
+            LevelMeta levelMeta(i);
             if(!fp.Write(&levelMeta, offset, sizeof(LevelMeta)))
             {
                 return false;
             }
         }
         
-        Level level(0);
-        levelVec_.push_back(std::move(level));
-
         return true;
     }
 
@@ -66,9 +55,10 @@ namespace KvStoreServer{
         else
         {
             //Search level
-            for(auto iter : levelVec_)
+            for(size_t i = 0; i < meta_.levelNum; i++)
             {
-                if(iter.Search(key, value))
+                Level level(i);
+                if(level.Search(key, value))
                 {
                     return true;
                 }
@@ -86,7 +76,9 @@ namespace KvStoreServer{
             //flush immutable to disk
             if(immuTable_->GetEntryNum() != 0)
             {
-                FlushToDisk();
+                //Compaction cp(meta_.levelNum);
+                compaction_->MinorCompaction(std::move(immuTable_));
+                ReadLSMTreeMeta();
             }
 
             immuTable_ = std::move(muTable_);
@@ -96,23 +88,10 @@ namespace KvStoreServer{
         }
     }
 
-    bool LSMTree::UpdateLSMTreeMeta()
+    bool LSMTree::ReadLSMTreeMeta()
     {
-        FileOperator fp("rb+");
-        return fp.Write(&meta_, 0, sizeof(LsmTreeMeta));
+        FileOperator fp("rb");
+        return fp.Read(&meta_, 0, sizeof(LsmTreeMeta));
     }
-
-    void LSMTree::FlushToDisk()
-    {
-        assert(immuTable_->GetEntryNum() == MAXENTRYNUM);
-
-        SSTable newTable(immuTable_->PopAllEntries(), levelVec_[0].GetLastSSTableOffset());
-
-        newTable.WriteInDisk();
-
-        levelVec_[0].UpdateMeta(newTable.GetMeta(), meta_.slot); 
-        meta_.slot += sizeof(SSTableMeta);
-        UpdateLSMTreeMeta();
-    } 
 
 }

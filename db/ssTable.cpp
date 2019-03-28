@@ -38,7 +38,7 @@ namespace KvStoreServer{
         
         bzero(meta_.filePath, 32); 
         SeqType st;
-        std::string str = ".sst/" + std::to_string(st.seqNum)  + ".ldb";
+        std::string str = ".sst/" + std::to_string(st.seq)  + ".sdb";
         assert(str.size() == 25);
         strcpy(meta_.filePath, str.c_str());
       
@@ -59,17 +59,26 @@ namespace KvStoreServer{
         return true;
     }
 
-    void SSTable::ShowData() const
+    std::vector<Entry> SSTable::GetData()
     {
-        for(auto i : entryVec_)
+        if(entryVec_.size())
         {
-            std::cout << i.internalKey.key << ":" << i.value.str << " ";
+            return entryVec_;
         }
-        std::cout << std::endl;
-        
-        std::cout << meta_.entryNum << std::endl;
-        std::cout << meta_.minKey.key << std::endl;
-        std::cout << meta_.maxKey.key << std::endl;
+
+        //read from disk
+        FileOperator fp("rb", (const char*)meta_.filePath);
+
+        //read entries
+        Entry entry;
+        off_t offset = sizeof(SSTableMeta);
+        while(fp.Read(&entry, offset, sizeof(Entry)))
+        {
+            entryVec_.push_back(entry);
+            offset += sizeof(Entry);
+        }
+
+        return entryVec_; 
     }
 
 }

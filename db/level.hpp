@@ -17,12 +17,7 @@ namespace KvStoreServer{
 
         bool WriteLevelMeta();
         bool ReadLevelMeta();
-        bool UpdateMeta(SSTableMeta sstMeta, off_t newSSTMetaOffset);
         bool Search(const KeyType& key, ValueType& value);
-        off_t GetLastSSTableOffset() const
-        {
-            return meta_.lastSSTable;
-        }
 
     private:
         size_t levelNo_;

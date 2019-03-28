@@ -1,6 +1,7 @@
 #ifndef _KVSTORESERVER_DB_LSMTREE_HPP_
 #define _KVSTORESERVER_DB_LSMTREE_HPP_
 
+#include "compaction.hpp"
 #include "level.hpp"
 #include "memTable.hpp"
 
@@ -17,6 +18,7 @@ namespace KvStoreServer{
           : muTable_(new MemTable(MAXHEIGHT)), immuTable_(new MemTable(MAXHEIGHT))
         {
             InitFromFile();
+            compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
         }
 
         bool InitFromFile();
@@ -30,13 +32,12 @@ namespace KvStoreServer{
         }
 
     private:
-        bool UpdateLSMTreeMeta();
-        void FlushToDisk();
+        bool ReadLSMTreeMeta();
         
         LsmTreeMeta meta_;
-        std::vector<Level> levelVec_;
         std::unique_ptr<MemTable> muTable_;
         std::unique_ptr<MemTable> immuTable_;
+        std::unique_ptr<Compaction> compaction_;
     };
 }
 
