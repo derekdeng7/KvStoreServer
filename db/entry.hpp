@@ -13,8 +13,9 @@ namespace KvStoreServer{
     constexpr auto MANIFESTPATH = ".Manifest";
     constexpr auto DELETETAG = "ENTRYHASBEENDEL";
     constexpr auto MAXHEIGHT = 16;
-    constexpr auto MAXENTRYNUM = 65535;
+    constexpr auto MAXENTRYNUM = 65536;
     constexpr auto MAXHLEVELNUM = 7;
+    constexpr auto INDEXNUM = 32;
 
     struct SeqType
     {
@@ -126,6 +127,7 @@ namespace KvStoreServer{
           : entryNum(0), minKey((std::numeric_limits<size_t>::max)()), next(0)
         {
             bzero(filePath, sizeof(filePath));
+
         }
     };
 

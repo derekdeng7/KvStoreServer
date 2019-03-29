@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cassert>
+#include <cmath>
 
 namespace KvStoreServer{
 
@@ -12,17 +13,35 @@ namespace KvStoreServer{
     {
         FileOperator fp("rb", (const char*)meta_.filePath);
 
-        //read entries
-        Entry entry;
-        off_t offset = sizeof(SSTableMeta);
-        while(fp.Read(&entry, offset, sizeof(Entry)))
+        //read index
+        if(!fp.Read(&indexArray_, sizeof(SSTableMeta), sizeof(Index) * INDEXNUM))
         {
-            entryVec_.push_back(entry);
+            return false;
+        }
+
+        //search index
+        size_t i = 1;
+        while(key >= indexArray_[i].internalKey)
+        {
+            i++;
+        }
+
+        //read entries
+        off_t offset = indexArray_[i - 1].offset;
+        while(offset != indexArray_[i].offset)
+        {
+            Entry entry;
+            if(!fp.Read(&entry, offset, sizeof(Entry)))
+            {
+                return false;
+            }
+
             if(entry.internalKey == key)
             {
                 value = entry.value;
                 return true;
             }
+
             offset += sizeof(Entry);
         }
 
@@ -38,7 +57,7 @@ namespace KvStoreServer{
         
         bzero(meta_.filePath, 32); 
         SeqType st;
-        std::string str = ".sst/" + std::to_string(st.seq)  + ".sdb";
+        std::string str = ".sst/" + std::to_string(st.seq)  + ".sst";
         assert(str.size() == 25);
         strcpy(meta_.filePath, str.c_str());
       
@@ -47,12 +66,28 @@ namespace KvStoreServer{
         //write ssMeta first
         fp.Write(&meta_, 0, sizeof(SSTableMeta));
 
+        //write index
+        const size_t blockSize = ceil(entryVec_.size() / INDEXNUM);
+        off_t offset = sizeof(SSTableMeta) + sizeof(Index) * INDEXNUM;
+        for(size_t i = 0; i < INDEXNUM; i++)
+        {
+            indexArray_[i] = Index(entryVec_[blockSize * i].internalKey, offset + sizeof(Entry) * blockSize * i);
+        }
+
+        if(!fp.Write(&indexArray_, sizeof(SSTableMeta), sizeof(Index) * INDEXNUM))
+        {
+            return false;
+        }
+
         //write entries
-        off_t offset = sizeof(SSTableMeta);
         for(auto i = entryVec_.begin(); i != entryVec_.end(); i++)
         {
             Entry entry = *i;
-            fp.Write(&entry, offset, sizeof(Entry));
+            if(!fp.Write(&entry, offset, sizeof(Entry)))
+            {
+                return false;
+            }
+
             offset += sizeof(entry);
         }
 
@@ -71,7 +106,7 @@ namespace KvStoreServer{
 
         //read entries
         Entry entry;
-        off_t offset = sizeof(SSTableMeta);
+        off_t offset = sizeof(SSTableMeta) + sizeof(Index) * INDEXNUM;
         while(fp.Read(&entry, offset, sizeof(Entry)))
         {
             entryVec_.push_back(entry);

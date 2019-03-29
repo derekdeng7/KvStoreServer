@@ -7,6 +7,20 @@
 
 namespace KvStoreServer{
  
+    struct Index
+    {
+        KeyType internalKey;
+        off_t offset;
+
+        Index()
+          :offset(0)
+        {}
+
+        Index(KeyType key, off_t off)
+          :internalKey(key), offset(off)
+        {}
+    };
+
     class SSTable
     {
     public:
@@ -18,8 +32,7 @@ namespace KvStoreServer{
         //only call when the immuable memtable dump in disk
         SSTable(std::vector<Entry> entryVec) 
           : entryVec_(entryVec) 
-        {
-        }
+        {}
         
         bool SearchFromDisk(const KeyType& key, ValueType& value);
         bool WriteInDisk();
@@ -44,6 +57,7 @@ namespace KvStoreServer{
     private:
         SSTableMeta meta_;
         std::vector<Entry> entryVec_;
+        Index indexArray_[32];
     };
 }
 
