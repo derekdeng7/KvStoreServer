@@ -2,7 +2,7 @@
 #define _KVSTORESERVER_DB_SKIPLIST_HPP_
 
 #include "atomicPointer.hpp"
-#include "entry.hpp"
+#include "base.hpp"
 #include "random.hpp"
 
 #include <cstdlib>
@@ -67,7 +67,7 @@ namespace KvStoreServer{
         SkipList(const size_t maxHeight);
 
         bool Search(const KeyType& key, ValueType& value);
-        void Insert(const KeyType& key, const ValueType& value);        
+        void Insert(const Entry& entry);        
         void ShowData() const;
         std::vector<Entry> PopAllEntries();
 

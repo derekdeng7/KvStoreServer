@@ -55,10 +55,9 @@ namespace KvStoreServer{
         meta_.minKey = entryVec_.begin()->internalKey;
         meta_.maxKey = entryVec_.rbegin()->internalKey;
         
-        bzero(meta_.filePath, 32); 
+        bzero(meta_.filePath, PATHLENGTH); 
         SeqType st;
-        std::string str = ".sst/" + std::to_string(st.seq)  + ".sst";
-        assert(str.size() == 25);
+        std::string str = ".sst/" + std::to_string(st.seq)  + ".db";
         strcpy(meta_.filePath, str.c_str());
       
         FileOperator fp("w+", (const char*)meta_.filePath);

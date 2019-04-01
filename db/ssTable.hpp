@@ -1,7 +1,7 @@
 #ifndef _KVSTORESERVER_DB_SSTABLE_HPP_
 #define _KVSTORESERVER_DB_SSTABLE_HPP_
 
-#include "entry.hpp"
+#include "base.hpp"
 
 #include <vector>
 

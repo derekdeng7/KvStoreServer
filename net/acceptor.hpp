@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <memory>
 
+#include "callback.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
 #include "socket.hpp"
@@ -15,7 +16,6 @@ namespace KvStoreServer{
     class Acceptor
     {
     public:
-        typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;
 
         Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port);
         ~Acceptor();

@@ -33,21 +33,21 @@ namespace KvStoreServer{
         return entry.internalKey == key;
     }
 
-    void SkipList::Insert(const KeyType& key, const ValueType& value)
+    void SkipList::Insert(const Entry& entry)
     {
 
         Node* cursor = header_;
         //if the skipList is empty
         if(header_->Next() == nullptr)
         {
-            Node* newNode = new Node(key, value);
+            Node* newNode = new Node(entry.internalKey, entry.value);
             header_->SetNext(newNode);
             entryNum_++;
             return;
         }
 
         //store the nodes need to link to the newNode 
-        std::stack<Node*> updateStack = FindGreaterOrEqual(key);
+        std::stack<Node*> updateStack = FindGreaterOrEqual(entry.internalKey);
 
         Node* tmpNode = nullptr;
         int height = GetRandomHeight();
@@ -68,7 +68,7 @@ namespace KvStoreServer{
                 height_++;
                 cursor = header_;
             }
-            Node* newNode = new Node(key, value);
+            Node* newNode = new Node(entry.internalKey, entry.value);
             newNode->SetNext(cursor->Next());
             cursor->SetNext(newNode); 
             newNode->SetDown(tmpNode);

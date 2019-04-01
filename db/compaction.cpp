@@ -276,7 +276,7 @@ namespace KvStoreServer{
         {
             if(remove((const char*)iter.filePath))
             {
-                perror("fail to remove .sdb");
+                perror("fail to remove .sst");
             }
         }
 

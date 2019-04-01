@@ -17,9 +17,9 @@ namespace KvStoreServer{
             return table_.Search(key, value);
         }
 
-        void Insert(const KeyType& key, const ValueType& value)
+        void Insert(const Entry& entry)
         {
-            table_.Insert(key, value);
+            table_.Insert(entry);
         }
 
         void ShowData() const

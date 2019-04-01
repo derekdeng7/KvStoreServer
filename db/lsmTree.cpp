@@ -2,18 +2,15 @@
 #include "fileOperator.hpp"
 
 #include <iostream>
+#include <functional>
 
 namespace KvStoreServer{
 
-    bool LSMTree::InitFromFile()
+    LSMTree::LSMTree() 
+      : log_(new Log()), muTable_(new MemTable(MAXHEIGHT)), immuTable_(new MemTable(MAXHEIGHT))
     {
-        FileOperator fp("rb");
-        if(!fp.Read(&meta_, 0, sizeof(LsmTreeMeta)))
-        {
-            return InitFromEmpty();
-        }
-
-        return true;
+        InitFromFile();
+        compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
     }
 
     bool LSMTree::InitFromEmpty()
@@ -38,8 +35,21 @@ namespace KvStoreServer{
                 return false;
             }
         }
-        
+
         return true;
+    }
+
+    bool LSMTree::InitFromFile()
+    {
+        if(!ReadLSMTreeMeta())
+        {
+            InitFromEmpty();
+        }
+
+        log_->SetInsertCallback(
+            std::bind(&LSMTree::Insert, this, std::placeholders::_1)
+        );
+        return log_->Init();
     }
 
     bool LSMTree::Get(const KeyType& key, ValueType& value)
@@ -69,15 +79,22 @@ namespace KvStoreServer{
 
     void LSMTree::Put(const KeyType& key, const ValueType& value)
     {
-        muTable_->Insert(key, value);
+        Entry entry(key, value);
+        log_->Write(entry);
+        Insert(entry);
+    }
+
+    void LSMTree::Insert(const Entry& entry)
+    {
+        muTable_->Insert(entry);
 
         if(muTable_->GetEntryNum() >= MAXENTRYNUM)
         {
             //flush immutable to disk
             if(immuTable_->GetEntryNum() != 0)
             {
-                //Compaction cp(meta_.levelNum);
                 compaction_->MinorCompaction(std::move(immuTable_));
+                log_->CreateFrozenLog();
                 ReadLSMTreeMeta();
             }
 
@@ -86,12 +103,6 @@ namespace KvStoreServer{
             assert(muTable_ == NULL);
             muTable_ = std::unique_ptr<MemTable>(new MemTable(MAXHEIGHT));
         }
-    }
-
-    bool LSMTree::ReadLSMTreeMeta()
-    {
-        FileOperator fp("rb");
-        return fp.Read(&meta_, 0, sizeof(LsmTreeMeta));
     }
 
 }
