@@ -1,9 +1,9 @@
 #ifndef _KVSTORESERVER_DB_SKIPLIST_HPP_
 #define _KVSTORESERVER_DB_SKIPLIST_HPP_
 
-#include "atomicPointer.hpp"
-#include "base.hpp"
-#include "random.hpp"
+#include "../include/atomicPointer.hpp"
+#include "../include/base.hpp"
+#include "../include/random.hpp"
 
 #include <cstdlib>
 #include <vector>

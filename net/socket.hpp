@@ -1,12 +1,12 @@
-#ifndef _KVSTORESERVER_SOCKET_HPP_
-#define _KVSTORESERVER_SOCKET_HPP_
+#ifndef _KVSTORESERVER_NET_SOCKET_HPP_
+#define _KVSTORESERVER_NET_SOCKET_HPP_
+
+#include "address.hpp"
+#include "declear.hpp"
 
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-
-#include "address.hpp"
-#include "declear.hpp"
 
 namespace KvStoreServer{
 
@@ -42,4 +42,4 @@ namespace KvStoreServer{
 
 }
 
-#endif //_KVSTORESERVER_SOCKET_HPP_
+#endif //_KVSTORESERVER_NET_SOCKET_HPP_

@@ -98,6 +98,12 @@ namespace KvStoreServer{
             perror("fail to UpdateMeta in level0");
             return false;
         }
+
+        if(!RemoveOldSSTable(sstMetaVec))
+        {
+            perror("fail to remove old SSTable");
+            return false;
+        }
         
         return MajorCompaction(levelNo + 1);
     }
@@ -232,7 +238,7 @@ namespace KvStoreServer{
         return true;
     }
 
-    std::deque<Entry> Compaction::MinHeapSort(std::vector<SSTableMeta> sstMetaVec)
+    std::deque<Entry> Compaction::MinHeapSort(const std::vector<SSTableMeta>& sstMetaVec)
     {
         assert(sstMetaVec.size());
 
@@ -272,14 +278,6 @@ namespace KvStoreServer{
             }
         }
 
-        for(auto iter : sstMetaVec)
-        {
-            if(remove((const char*)iter.filePath))
-            {
-                perror("fail to remove .sst");
-            }
-        }
-
         return result;
     }
 
@@ -291,7 +289,7 @@ namespace KvStoreServer{
         while(entryDeq.size())
         {
             std::vector<Entry> entryVec;
-            for(auto i = 0; i < MAXENTRYNUM && entryDeq.size(); i++)
+            for(size_t i = 0; i < MAXENTRYNUM && entryDeq.size(); i++)
             {
                 entryVec.push_back(entryDeq.front());
                 entryDeq.pop_front();
@@ -428,4 +426,16 @@ namespace KvStoreServer{
         return fp_.Write(&lsmMeta, 0, sizeof(LsmTreeMeta));
     }
 
+    bool Compaction::RemoveOldSSTable(const std::vector<SSTableMeta>& sstMetaVec)
+    {
+        for(auto iter : sstMetaVec)
+        {
+            if(remove((const char*)iter.filePath))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

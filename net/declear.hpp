@@ -1,5 +1,5 @@
-#ifndef _KVSTORESERVER_DECLEAR_HPP_
-#define _KVSTORESERVER_DECLEAR_HPP_
+#ifndef _KVSTORESERVER_NET_DECLEAR_HPP_
+#define _KVSTORESERVER_NET_DECLEAR_HPP_
 
 namespace KvStoreServer{
 
@@ -13,11 +13,8 @@ namespace KvStoreServer{
     class EventLoop;
     class Server;
     class Socket;
-    class SyncQueue;
     class TaskInEventLoop;
     class TaskInSyncQueue;
-    class ThreadGuard;
-    class ThreadPool;
 }
 
-#endif //_KVSTORESERVER_DECLEAR_HPP_
+#endif //_KVSTORESERVER_NET_DECLEAR_HPP_

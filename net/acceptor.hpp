@@ -1,22 +1,21 @@
-#ifndef _KVSTORESERVER_ACCEPTOR_HPP_
-#define _KVSTORESERVER_ACCEPTOR_HPP_
+#ifndef _KVSTORESERVER_NET_ACCEPTOR_HPP_
+#define _KVSTORESERVER_NET_ACCEPTOR_HPP_
+
+#include "../include/callback.hpp"
+#include "declear.hpp"
+#include "eventLoop.hpp"
+#include "socket.hpp"
 
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdexcept>
 #include <memory>
 
-#include "callback.hpp"
-#include "declear.hpp"
-#include "eventLoop.hpp"
-#include "socket.hpp"
-
 namespace KvStoreServer{
 
     class Acceptor
     {
     public:
-
         Acceptor(std::shared_ptr<EventLoop> loop, uint16_t port);
         ~Acceptor();
 
@@ -38,4 +37,4 @@ namespace KvStoreServer{
     };
 }
 
-#endif  //_KVSTORESERVER_ACCEPTOR_HPP_
+#endif  //_KVSTORESERVER_NET_ACCEPTOR_HPP_

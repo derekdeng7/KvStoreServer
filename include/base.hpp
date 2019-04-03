@@ -1,5 +1,5 @@
-#ifndef _KVSTORESERVER_DB_ENTRY_HPP_
-#define _KVSTORESERVER_DB_ENTRY_HPP_
+#ifndef _KVSTORESERVER_DB_BASE_HPP_
+#define _KVSTORESERVER_DB_BASE_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -10,12 +10,22 @@
 
 namespace KvStoreServer{
 
+    const int MAX_EVENTS = 1024;
+    const int FD_SIZE = 1024;
+    const int BUF_SIZE = 1024;
+
     constexpr auto MANIFESTPATH = ".Manifest";
+    constexpr auto LOGMETAPATH = ".LogMeta";
     constexpr auto DELETETAG = "ENTRYHASBEENDEL";
-    constexpr auto MAXHEIGHT = 16;
-    constexpr auto MAXENTRYNUM = 65536;
-    constexpr auto MAXHLEVELNUM = 7;
-    constexpr auto INDEXNUM = 32;
+
+    constexpr size_t MAXHEIGHT = 16;
+    constexpr size_t MAXENTRYNUM = 65536;
+    constexpr size_t MAXHLEVELNUM = 7;
+    constexpr size_t MAXSYNCQUEUESIZE = 4096;
+
+    constexpr int PATHLENGTH = 32;
+    constexpr size_t INDEXNUM = 32;
+
 
     struct SeqType
     {
@@ -117,7 +127,7 @@ namespace KvStoreServer{
 
     struct SSTableMeta
     {
-        char filePath[32];
+        char filePath[PATHLENGTH];
         size_t entryNum;
         KeyType minKey;
         KeyType maxKey;
@@ -126,8 +136,7 @@ namespace KvStoreServer{
         SSTableMeta()
           : entryNum(0), minKey((std::numeric_limits<size_t>::max)()), next(0)
         {
-            bzero(filePath, sizeof(filePath));
-
+            bzero(filePath, PATHLENGTH);
         }
     };
 
@@ -147,6 +156,21 @@ namespace KvStoreServer{
         {}
     };
 
+    struct LogMeta
+    {
+        char activeLogPath[PATHLENGTH];
+        char frozenLogPath[PATHLENGTH];
+        size_t activeLogEntryNum;
+        size_t frozenLogEntryNum;
+
+        LogMeta()
+          : activeLogEntryNum(0), frozenLogEntryNum(0)
+        {
+            bzero(activeLogPath, PATHLENGTH);
+            bzero(frozenLogPath, PATHLENGTH);
+        }
+    };
+    
     struct LsmTreeMeta
     {
         size_t levelNum;
@@ -159,6 +183,21 @@ namespace KvStoreServer{
         {}
     };
 
+    struct Message
+    {
+        size_t option;  // 1:get, 2:put,
+        bool flag;
+        Entry entry;
+
+        Message()
+          : option(0), flag(false)
+        {}
+
+        Message(size_t o, KeyType key, ValueType value)
+          : option(o), flag(false),entry(key, value)
+        {}
+    };
+
 }
 
-#endif //_KVSTORESERVER_DB_ENTRY_HPP_
+#endif //_KVSTORESERVER_DB_BASE_HPP_

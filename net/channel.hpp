@@ -1,12 +1,12 @@
-#ifndef _KVSTORESERVER_CHANNEL_HPP_
-#define _KVSTORESERVER_CHANNEL_HPP_
+#ifndef _KVSTORESERVER_NET_CHANNEL_HPP_
+#define _KVSTORESERVER_NET_CHANNEL_HPP_
+
+#include "../include/callback.hpp"
+#include "declear.hpp"
+#include "eventLoop.hpp"
 
 #include <sys/epoll.h>
 #include <iostream>
-
-#include "callback.hpp"
-#include "declear.hpp"
-#include "eventLoop.hpp"
 
 namespace KvStoreServer{
 
@@ -47,4 +47,4 @@ namespace KvStoreServer{
 
 }
 
-#endif //_KVSTORESERVER_CHANNEL_HPP_
+#endif //_KVSTORESERVER_NET_CHANNEL_HPP_

@@ -1,16 +1,16 @@
-#ifndef _KVSTORESERVER_SERVER_HPP_
-#define _KVSTORESERVER_SERVER_HPP_
-
-#include <sys/epoll.h>
-#include <map>
-#include <memory>
+#ifndef _KVSTORESERVER_NET_SERVER_HPP_
+#define _KVSTORESERVER_NET_SERVER_HPP_
 
 #include "acceptor.hpp"
 #include "connector.hpp"
 #include "declear.hpp"
-#include "define.hpp"
 #include "eventLoop.hpp"
-#include "threadPool.hpp"
+#include "../include/base.hpp"
+#include "../include/threadPool.hpp"
+
+#include <sys/epoll.h>
+#include <map>
+#include <memory>
 
 namespace KvStoreServer{
 
@@ -30,11 +30,11 @@ namespace KvStoreServer{
     private:
         uint16_t port_;
         std::map<int, std::shared_ptr<Connector>> connections_;
-        std::shared_ptr<Acceptor> acceptor_;
+        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
         std::shared_ptr<EventLoop> loop_;
-        std::shared_ptr<ThreadPool> threadPool_;
+        std::shared_ptr<Acceptor> acceptor_;
     };
 
 }
 
-#endif //_KVSTORESERVER_SERVER_HPP_
+#endif //_KVSTORESERVER_NET_SERVER_HPP_

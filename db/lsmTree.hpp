@@ -5,28 +5,48 @@
 #include "level.hpp"
 #include "log.hpp"
 #include "memTable.hpp"
+#include "../include/callback.hpp"
 
 #include <cassert>
-#include <thread>
 #include <vector>
 
 namespace KvStoreServer{
 
-    class LSMTree   
+    class LSMTree : public SyncThread<Entry>   
     {
     public:
-        LSMTree();
-        bool InitFromEmpty();
-        bool InitFromFile();
-        bool Get(const KeyType& key, ValueType& value);
-        void Put(const KeyType& key, const ValueType& value);
-    
-        void Remove(const KeyType& key)
+        LSMTree()
+          : SyncThread<Entry>(),
+            log_(new Log()), 
+            muTable_(new MemTable(MAXHEIGHT)), 
+            immuTable_(new MemTable(MAXHEIGHT))
+        {}
+
+        ~LSMTree()
         {
-            Put(key, DELETETAG);
+            Stop();
         }
 
+        void Start()
+        {
+            InitFromFile();
+            compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
+            
+            StartThread();
+        }
+
+        bool InitFromFile();
+        bool Get(const KeyType& key, ValueType& value);
+        void Put(const Entry& entry);
+    
     private:
+        bool InitFromEmpty();
+
+        virtual void ProcessTask(const Entry& entry)
+        {
+            return Insert(entry);
+        }
+
         bool ReadLSMTreeMeta()
         {
             FileOperator fp("rb");
@@ -38,7 +58,7 @@ namespace KvStoreServer{
         LsmTreeMeta meta_;
         std::unique_ptr<Log> log_;
         std::unique_ptr<MemTable> muTable_;
-        std::unique_ptr<MemTable> immuTable_;
+        std::unique_ptr<MemTable> immuTable_; 
         std::unique_ptr<Compaction> compaction_;
     };
 }

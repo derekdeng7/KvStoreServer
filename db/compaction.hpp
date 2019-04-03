@@ -1,8 +1,7 @@
 #ifndef _KVSTORESERVER_DB_COMPACTION_HPP_
 #define _KVSTORESERVER_DB_COMPACTION_HPP_
 
-#include "base.hpp"
-#include "fileOperator.hpp"
+#include "../include/fileOperator.hpp"
 #include "memTable.hpp"
 
 #include <queue>
@@ -49,11 +48,13 @@ namespace KvStoreServer{
         bool GetOverlapSSTMeta(LevelMeta& levMeta, const KeyType& minKey, const KeyType& maxKey, 
             std::vector<SSTableMeta>& sstMetaVec, off_t& insertOffset);
         
-        std::deque<Entry> MinHeapSort(std::vector<SSTableMeta> sstMetaVec);
+        std::deque<Entry> MinHeapSort(const std::vector<SSTableMeta>& sstMetaVec);
         std::vector<SSTableMeta> WriteInDisk(std::deque<Entry>& entryDeq);
 
         bool UpdateMeta(SSTableMeta sstMeta);
         bool UpdateMeta(LevelMeta nextLevMeta, off_t insertOffset, std::vector<SSTableMeta> sstMetaVec);
+
+        bool RemoveOldSSTable(const std::vector<SSTableMeta>& sstMetaVec);
 
         FileOperator fp_;
         size_t levelNum_;

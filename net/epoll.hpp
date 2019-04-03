@@ -1,17 +1,15 @@
-#ifndef _KVSTORESERVER_EPOLL_HPP_
-#define _KVSTORESERVER_EPOLL_HPP_
+#ifndef _KVSTORESERVER_NET_EPOLL_HPP_
+#define _KVSTORESERVER_NET_EPOLL_HPP_
+
+#include "channel.hpp"
+#include "declear.hpp"
+#include "../include/base.hpp"
 
 #include <sys/epoll.h>
 #include <vector>
 #include <fcntl.h>
 #include <iostream>
-
 #include <map>
-
-#include "channel.hpp"
-#include "declear.hpp"
-#include "define.hpp"
-
 
 namespace KvStoreServer{
 
@@ -34,4 +32,4 @@ namespace KvStoreServer{
 
 }
 
-#endif //_KVSTORESERVER_EPOLL_HPP_
+#endif //_KVSTORESERVER_NET_EPOLL_HPP_

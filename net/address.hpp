@@ -1,11 +1,11 @@
-#ifndef _KVSTORESERVER_ADDRESS_HPP_
-#define _KVSTORESERVER_ADDRESS_HPP_
+#ifndef _KVSTORESERVER_NET_ADDRESS_HPP_
+#define _KVSTORESERVER_NET_ADDRESS_HPP_
+
+#include "declear.hpp"
 
 #include <string>
 #include <cassert>
 #include <arpa/inet.h>
-
-#include "declear.hpp"
 
 namespace KvStoreServer{
 
@@ -14,11 +14,6 @@ namespace KvStoreServer{
     public:
         Address(uint16_t port, uint32_t ip) : port_(port), ip_(ip) 
         {}
-
-        Address(uint16_t port, const char* ip) : port_(port)
-        {
-            assert(0 != inet_pton(AF_INET, ip, &ip_));
-        }
 
         uint16_t Port() const 
         {
@@ -32,9 +27,9 @@ namespace KvStoreServer{
 
         std::string ToString() const
         {
-                char buf[MaxLen];
-                assert(inet_ntop(AF_INET, &ip_, buf, MaxLen));
-                return std::string(buf) + " port " + std::to_string(port_);
+            char buf[MaxLen];
+            assert(inet_ntop(AF_INET, &ip_, buf, MaxLen));
+            return std::string(buf) + " port " + std::to_string(port_);
         }
 
     private:
@@ -44,4 +39,4 @@ namespace KvStoreServer{
     };
 }
 
-#endif //_KVSTORESERVER_ADDRESS_HPP_
+#endif //_KVSTORESERVER_NET_ADDRESS_HPP_

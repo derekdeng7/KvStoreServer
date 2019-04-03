@@ -3,7 +3,7 @@
 
 namespace KvStoreServer{
 
-    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool> threadPool, std::shared_ptr<Server> server)
+    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool, std::shared_ptr<Server> server)
        :sockfd_(sockfd),
         addr_(addr),
         channel_(nullptr),
@@ -37,7 +37,7 @@ namespace KvStoreServer{
         channel_->RemoveChannel();
     }
 
-    void Connector::Send(const std::string& message)
+    void Connector::Send(const Message& message)
     {
         if(loop_->isInLoopThread())
         {
@@ -50,28 +50,29 @@ namespace KvStoreServer{
         }
     }
 
-    void Connector::SendInLoop(const std::string& message)
+    void Connector::SendInLoop(const Message& message)
     {
-        int n = 0;
+        size_t n = 0;
         if(sendBuf_->DataSize() == 0)
         {
-            std::cout << "[i] send: '" << message << "'" << std::endl;
-            n = write(sockfd_, message.c_str(), message.size());
+            std::cout << "[i] send Message " << std::endl;
+            n = write(sockfd_, (char*)&message, sizeof(Message));
             if(n < 0)
             {
                 std::cout << "[!] Connector::Send() write error" << std::endl;
             }
 
-            if(n == static_cast<int>(message.size()))
+            if(n == sizeof(message))
             {
                 writeCompleteCallback_();
             }
                 
         }
 
-        if(n < static_cast<int>(message.size()))
+        if(n < sizeof(Message))
         {
-            sendBuf_->Append(message.substr(n, message.size()));
+            assert(false);
+            //sendBuf_->Append(message.substr(n, message.size()));
             if(channel_->IsWriting())
             {
                 channel_->EnableWriting();
@@ -84,13 +85,17 @@ namespace KvStoreServer{
         int sockfd = channel_->GetSockfd();
         int read_size;
         char buf[BUF_SIZE];
+
+        Message msg;
+
         if(sockfd < 0)
         {
             perror("EPOLLIN sockfd < 0 error ");
             return;
         }
         bzero(buf, BUF_SIZE);
-        if((read_size = read(sockfd, buf, BUF_SIZE)) < 0)
+        //if((read_size = read(sockfd, buf, BUF_SIZE)) < 0)
+        if((read_size = read(sockfd, (char*)&msg, sizeof(msg))) < 0)
         {
             if(errno == ECONNRESET)
             {
@@ -107,12 +112,7 @@ namespace KvStoreServer{
         }
         else
         {
-            std::string message;
-            std::string strbuf(buf);
-            recvBuf_->Append(strbuf);
-            std::cout << "[i] receive from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
-            
-            TaskInSyncQueue task(std::bind(&Connector::Send, shared_from_this(), std::placeholders::_1), recvBuf_->RetriveAllAsString());
+            TaskInSyncQueue task(std::bind(&Connector::Send, shared_from_this(), std::placeholders::_1), msg);
             threadPool_->AddTask(task);
         }
     }

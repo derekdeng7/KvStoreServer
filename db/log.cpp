@@ -5,27 +5,27 @@
 
 namespace KvStoreServer{
 
-    bool Log::Init()
+    bool Log::Start()
     {
+        StartThread();
+
         if(!ReadLogMeta())
         {
             return CreateActiveLog();
         }
-
+        
         return Recovery();
     }
 
-    bool Log::Write(Entry& entry)
+    bool Log::Write(const Entry& entry)
     {
-        FileOperator fp1("rb+", meta_.activeLogPath);
-        if(!fp1.Write(&entry, sizeof(Entry) * meta_.activeLogEntryNum, sizeof(Entry)))
+        if(entryNum_ >= MAXENTRYNUM)
         {
-            return false;
+            CreateFrozenLog();
         }
 
-        FileOperator fp2("rb+");
-        meta_.activeLogEntryNum++;
-        if(!fp2.Write(&meta_, sizeof(LsmTreeMeta) + sizeof(LevelMeta) * MAXHLEVELNUM, sizeof(LogMeta)))
+        FileOperator fp("rb+", meta_.activeLogPath);
+        if(!fp.Write((Entry*)&entry, (entryNum_++) * sizeof(Entry), sizeof(Entry)))
         {
             return false;
         }
@@ -35,23 +35,25 @@ namespace KvStoreServer{
   
     bool Log::CreateActiveLog()
     {
-        FileOperator fp1("rb+");
-        
+        FileOperator fp1("rb+", LOGMETAPATH);
         SeqType st;
         std::string str = ".log/" + std::to_string(st.seq)  + ".lg";
+        pathQueue_.push(str);
         strcpy(meta_.activeLogPath, str.c_str());
-        meta_.activeLogEntryNum = 0;
+        //meta_.activeLogEntryNum = 0;
         FileOperator fp2("w+", meta_.activeLogPath);
         
-        return fp1.Write(&meta_, sizeof(LsmTreeMeta) + sizeof(LevelMeta) * MAXHLEVELNUM, sizeof(LogMeta));
+        entryNum_ = 0;
+        
+        return fp1.Write(&meta_, 0, sizeof(LogMeta));
     }
 
     bool Log::CreateFrozenLog()
     {
-        remove(meta_.frozenLogPath);
+        //remove(meta_.frozenLogPath);
 
         strcpy(meta_.frozenLogPath, meta_.activeLogPath);
-        meta_.frozenLogEntryNum = meta_.activeLogEntryNum;
+        //meta_.frozenLogEntryNum = meta_.activeLogEntryNum;
         
         return CreateActiveLog();
     }

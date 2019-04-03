@@ -1,17 +1,9 @@
 #include "lsmTree.hpp"
-#include "fileOperator.hpp"
 
 #include <iostream>
 #include <functional>
 
 namespace KvStoreServer{
-
-    LSMTree::LSMTree() 
-      : log_(new Log()), muTable_(new MemTable(MAXHEIGHT)), immuTable_(new MemTable(MAXHEIGHT))
-    {
-        InitFromFile();
-        compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
-    }
 
     bool LSMTree::InitFromEmpty()
     {
@@ -27,7 +19,7 @@ namespace KvStoreServer{
 
         //write LevelMeta
         offset += sizeof(LsmTreeMeta);
-        for(auto i = 0; i < MAXHLEVELNUM; i++, offset += sizeof(LevelMeta))
+        for(size_t i = 0; i < MAXHLEVELNUM; i++, offset += sizeof(LevelMeta))
         {
             LevelMeta levelMeta(i);
             if(!fp.Write(&levelMeta, offset, sizeof(LevelMeta)))
@@ -35,6 +27,8 @@ namespace KvStoreServer{
                 return false;
             }
         }
+
+        FileOperator fp1("wb+", LOGMETAPATH);
 
         return true;
     }
@@ -49,7 +43,8 @@ namespace KvStoreServer{
         log_->SetInsertCallback(
             std::bind(&LSMTree::Insert, this, std::placeholders::_1)
         );
-        return log_->Init();
+
+        return log_->Start();
     }
 
     bool LSMTree::Get(const KeyType& key, ValueType& value)
@@ -77,11 +72,10 @@ namespace KvStoreServer{
         } 
     }
 
-    void LSMTree::Put(const KeyType& key, const ValueType& value)
+    void LSMTree::Put(const Entry& entry)
     {
-        Entry entry(key, value);
-        log_->Write(entry);
-        Insert(entry);
+        log_->AddTask(entry);
+        AddTask(entry);
     }
 
     void LSMTree::Insert(const Entry& entry)
@@ -94,7 +88,7 @@ namespace KvStoreServer{
             if(immuTable_->GetEntryNum() != 0)
             {
                 compaction_->MinorCompaction(std::move(immuTable_));
-                log_->CreateFrozenLog();
+                log_->Update();
                 ReadLSMTreeMeta();
             }
 
@@ -104,5 +98,4 @@ namespace KvStoreServer{
             muTable_ = std::unique_ptr<MemTable>(new MemTable(MAXHEIGHT));
         }
     }
-
 }

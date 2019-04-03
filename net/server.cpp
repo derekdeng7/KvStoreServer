@@ -7,9 +7,9 @@ namespace KvStoreServer{
 
     Server::Server(uint16_t port)
        :port_(port),
-        acceptor_(nullptr),
+        threadPool_(nullptr),
         loop_(nullptr),
-        threadPool_(nullptr)
+        acceptor_(nullptr)
     {}
 
     Server::~Server()
@@ -20,7 +20,7 @@ namespace KvStoreServer{
     void Server::Start()
     {
         int numThread = std::thread::hardware_concurrency();
-        threadPool_ = std::make_shared<ThreadPool>();
+        threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>();
         threadPool_->Start(numThread - 2);
         
         loop_ = std::make_shared<EventLoop>();

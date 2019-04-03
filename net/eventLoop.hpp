@@ -1,5 +1,9 @@
-#ifndef _KVSTORESERVER_EVENTLOOP_HPP_
-#define _KVSTORESERVER_EVENTLOOP_HPP_
+#ifndef _KVSTORESERVER_NET_EVENTLOOP_HPP_
+#define _KVSTORESERVER_NET_EVENTLOOP_HPP_
+
+#include "declear.hpp"
+#include "epoll.hpp"
+#include "task.hpp"
 
 #include <vector>
 #include <sys/eventfd.h>
@@ -8,11 +12,6 @@
 #include <thread>
 #include <memory>
 #include <atomic>
-
-#include "callback.hpp"
-#include "declear.hpp"
-#include "epoll.hpp"
-#include "task.hpp"
 
 namespace KvStoreServer{
 
@@ -43,12 +42,12 @@ namespace KvStoreServer{
         bool callingPendingFunctors_;
         int eventfd_;
         const size_t threadid_;
-        std::mutex mutex_;
         std::unique_ptr<Epoll> epoller_;
+        std::mutex mutex_;
         std::unique_ptr<Channel> wakeupfdChannel_;
         std::vector<TaskInEventLoop> pendingFunctors_;
     };
 
 }
 
-#endif  //_KVSTORESERVER_EVENTLOOP_HPP_
+#endif  //_KVSTORESERVER_NET_EVENTLOOP_HPP_
