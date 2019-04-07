@@ -10,9 +10,10 @@
 
 namespace KvStoreServer{
 
-    const int MAX_EVENTS = 1024;
-    const int FD_SIZE = 1024;
-    const int BUF_SIZE = 1024;
+    const int MAXEVENTNUM = 1024;
+    const int MAXFDNUM = 1024;
+    const int BUFSIZE = 1024;
+    const int MESSAGESIZE = 1024;
 
     constexpr auto MANIFESTPATH = ".Manifest";
     constexpr auto LOGMETAPATH = ".LogMeta";
@@ -180,21 +181,6 @@ namespace KvStoreServer{
 
         LsmTreeMeta() 
           : levelNum(1), ssTableNum(0), entryNum(0), slot(0)
-        {}
-    };
-
-    struct Message
-    {
-        size_t option;  // 1:get, 2:put,
-        bool flag;
-        Entry entry;
-
-        Message()
-          : option(0), flag(false)
-        {}
-
-        Message(size_t o, KeyType key, ValueType value)
-          : option(o), flag(false),entry(key, value)
         {}
     };
 

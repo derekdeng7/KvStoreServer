@@ -15,13 +15,15 @@ namespace KvStoreServer{
     public:
         Socket();
         Socket(int fd);
+        Socket(int fd, sockaddr_in addr);
 
         int Fd() const;
-        sockaddr_in Serveraddr() const;
+        sockaddr_in ServerAddr() const;
         bool Valid() const;
 
         bool Create();
         bool Bind(uint16_t port);
+        bool Connect(const Address& addr);
         bool Listen();
         int Accept();
         bool Close();
@@ -36,7 +38,7 @@ namespace KvStoreServer{
 
     private:
         int fd_;
-        struct sockaddr_in servaddr_;
+        struct sockaddr_in addr_;
         static const int BACKLOG = 50;
     };
 

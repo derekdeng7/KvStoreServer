@@ -4,7 +4,7 @@ namespace KvStoreServer{
 
     Epoll::Epoll()
 	{
-        if((epollfd_ = epoll_create(FD_SIZE)) <= 0)
+        if((epollfd_ = epoll_create(MAXFDNUM)) <= 0)
         {
             std::string err = "epoll_create error, epollfd: " + std::to_string(epollfd_);
             perror(err.c_str());
@@ -16,7 +16,7 @@ namespace KvStoreServer{
 
     void Epoll::DoEpoll(std::vector<Channel*>* pChannels)
 	{
-        int fds = ::epoll_wait(epollfd_, events_, MAX_EVENTS, -1);
+        int fds = ::epoll_wait(epollfd_, events_, MAXEVENTNUM, -1);
         if(fds == -1)
         {
             std::string err = "epoll_wait error, errno: " + std::to_string(errno);

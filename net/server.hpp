@@ -6,7 +6,6 @@
 #include "declear.hpp"
 #include "eventLoop.hpp"
 #include "../include/base.hpp"
-#include "../include/threadPool.hpp"
 
 #include <sys/epoll.h>
 #include <map>
@@ -14,23 +13,24 @@
 
 namespace KvStoreServer{
 
-    class Server : public std::enable_shared_from_this<Server>
+    class Server
     {
     public:
-        Server(uint16_t port);
+        Server(size_t threadNum, uint16_t port);
         ~Server();
 
         void Start();
         void Close();
-        void NewConnection(int sockfd, const sockaddr_in& addr);
-        void WriteComplete();
-        void CloseConnection(int sockfd);
-        void ClearConnections();
 
     private:
+        void NewConnection(int sockfd, const sockaddr_in& addr);
+        void WriteComplete();
+        void RemoveConnection(int sockfd);
+        void ClearConnections();
+
+        size_t threadNum_;
         uint16_t port_;
         std::map<int, std::shared_ptr<Connector>> connections_;
-        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Acceptor> acceptor_;
     };

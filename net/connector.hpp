@@ -4,7 +4,7 @@
 #include "buffer.hpp"
 #include "declear.hpp"
 #include "eventLoop.hpp"
-#include "../include/threadPool.hpp"
+#include "../include/syncQueue.hpp"
 
 #include <unistd.h>
 #include <string>
@@ -15,28 +15,37 @@ namespace KvStoreServer{
     class Connector : public std::enable_shared_from_this<Connector>
     {
     public:
-        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool, std::shared_ptr<Server> server);
+        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
+        Connector(Address addr, std::shared_ptr<EventLoop> loop);
+
         ~Connector();
 
         void Start();
         void Close();
-        void Send(const Message& message);
-        void SendInLoop(const Message& message);
+        void Send(const std::string& message);
+        void SendInLoop(const std::string& message);
 
         void HandleRead();
         void HandleWrite();
 
-        void SetWriteCompleteCallback(EventCallback callback);
+        void SetWriteCompleteCallback(WriteCompleteCallback callback)
+        {
+            writeCompleteCallback_ = callback;
+        }
+
+        void SetRemoveConnectionCallback(RemoveConnectionCallback callback)
+        {
+            removeConnectionCallback_ = callback;
+        }
 
     private:
-        int sockfd_;
-        sockaddr_in addr_;
-        std::unique_ptr<Channel> channel_;
+        std::unique_ptr<Socket> socket_;
+        std::unique_ptr<Channel> channel_;    
         std::unique_ptr<Buffer> recvBuf_;
         std::unique_ptr<Buffer> sendBuf_;
         std::shared_ptr<EventLoop> loop_;
-        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
-        std::shared_ptr<Server> server_;
+        bool isMultiThread_;
+        RemoveConnectionCallback removeConnectionCallback_;
         WriteCompleteCallback writeCompleteCallback_;
     };
 }

@@ -1,18 +1,40 @@
 #include "connector.hpp"
 #include "server.hpp"
-
 namespace KvStoreServer{
 
-    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop, std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool, std::shared_ptr<Server> server)
-       :sockfd_(sockfd),
-        addr_(addr),
+    //server
+    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
+       :socket_(new Socket(sockfd, addr)),
         channel_(nullptr),
         recvBuf_(new Buffer()),
         sendBuf_(new Buffer()),
         loop_(loop),
-        threadPool_(threadPool),
-        server_(server)     
+        isMultiThread_(loop_->GetThreadNum() > 0)
     {}
+
+    //client
+    Connector::Connector(Address address, std::shared_ptr<EventLoop> loop)
+       :socket_(new Socket(-1)),
+        channel_(nullptr),
+        recvBuf_(new Buffer()),
+        sendBuf_(new Buffer()),
+        loop_(loop)
+    {
+        if(!socket_->Create())
+        {
+            throw std::runtime_error("Create() failed, error code: " + std::to_string(errno));
+        }
+
+        if(!socket_->Connect(address))
+        {
+            throw std::runtime_error("Connect() failed, error code: " + std::to_string(errno));
+        }
+
+        if(!socket_->SetNonBlock())
+        {
+            throw std::runtime_error("SetNonBlocking() failed, error code: " + std::to_string(errno));
+        }
+    }
 
     Connector::~Connector()
     {
@@ -22,7 +44,7 @@ namespace KvStoreServer{
 
     void Connector::Start()
     {
-        channel_.reset(new Channel(sockfd_, addr_, loop_));
+        channel_.reset(new Channel(socket_->Fd(), socket_->ServerAddr(), loop_));
         channel_->SetReadCallback(
             std::bind(&Connector::HandleRead, this)
         );
@@ -37,7 +59,7 @@ namespace KvStoreServer{
         channel_->RemoveChannel();
     }
 
-    void Connector::Send(const Message& message)
+    void Connector::Send(const std::string& message)
     {
         if(loop_->isInLoopThread())
         {
@@ -50,30 +72,28 @@ namespace KvStoreServer{
         }
     }
 
-    void Connector::SendInLoop(const Message& message)
+    void Connector::SendInLoop(const std::string& message)
     {
-        size_t n = 0;
+        int n = 0;
         if(sendBuf_->DataSize() == 0)
         {
-            std::cout << "[i] send Message " << std::endl;
-            n = write(sockfd_, (char*)&message, sizeof(Message));
+            std::cout << "[i] send: '" << message << "'" << std::endl;
+            n = write(socket_->Fd(), message.c_str(), message.size());
             if(n < 0)
             {
                 std::cout << "[!] Connector::Send() write error" << std::endl;
             }
 
-            if(n == sizeof(message))
+            if(n == static_cast<int>(message.size()))
             {
                 writeCompleteCallback_();
             }
                 
         }
 
-        if(n < sizeof(Message))
+        if(n < static_cast<int>(message.size()))
         {
-            assert(false);
-            //sendBuf_->Append(message.substr(n, message.size()));
-            if(channel_->IsWriting())
+            sendBuf_->Append(message.substr(n, message.size()));
             {
                 channel_->EnableWriting();
             }
@@ -84,18 +104,16 @@ namespace KvStoreServer{
     {
         int sockfd = channel_->GetSockfd();
         int read_size;
-        char buf[BUF_SIZE];
-
-        Message msg;
+        char buf[BUFSIZE];
 
         if(sockfd < 0)
         {
             perror("EPOLLIN sockfd < 0 error ");
             return;
         }
-        bzero(buf, BUF_SIZE);
-        //if((read_size = read(sockfd, buf, BUF_SIZE)) < 0)
-        if((read_size = read(sockfd, (char*)&msg, sizeof(msg))) < 0)
+
+        bzero(buf, BUFSIZE);
+        if((read_size = read(sockfd, buf, BUFSIZE)) < 0)
         {
             if(errno == ECONNRESET)
             {
@@ -106,14 +124,22 @@ namespace KvStoreServer{
         }
         else if(read_size == 0)
         {
-            std::cout << "[-] read 0, closed socket " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << std::endl; 
-            TaskInEventLoop task(std::bind(&Server::CloseConnection, server_, std::placeholders::_1), sockfd);
+            std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
+            TaskInEventLoop task(removeConnectionCallback_, sockfd);
             loop_->queueInLoop(task);
         }
         else
         {
-            TaskInSyncQueue task(std::bind(&Connector::Send, shared_from_this(), std::placeholders::_1), msg);
-            threadPool_->AddTask(task);
+            std::string strbuf(buf);
+            recvBuf_->Append(strbuf);
+            std::cout << "[i] receive from " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
+            
+            std::string message = recvBuf_->RetriveAllAsString();
+            if(isMultiThread_)
+            {
+                TaskInSyncQueue task(std::bind(&Connector::Send, this, std::placeholders::_1), message);
+                loop_->AddTask(task);
+            }
         }
     }
 
@@ -130,15 +156,9 @@ namespace KvStoreServer{
                 if(sendBuf_->DataSize() == 0)
                 {
                     channel_->DisableWriting();
-
                 }
             }
         }
-    }
-
-    void Connector::SetWriteCompleteCallback(EventCallback callback)
-    {
-        writeCompleteCallback_ = callback;
     }
 
 }

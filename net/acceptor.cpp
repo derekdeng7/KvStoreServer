@@ -19,7 +19,7 @@ namespace KvStoreServer{
     {
         listenfd_ = InitListenfd();
 
-        acceptChannel_.reset(new Channel(listenfd_, socket_->Serveraddr(), loop_));
+        acceptChannel_.reset(new Channel(listenfd_, socket_->ServerAddr(), loop_));
         acceptChannel_->SetReadCallback(
             std::bind(&Acceptor::HandleRead, this)
         );
@@ -73,20 +73,30 @@ namespace KvStoreServer{
     int Acceptor::InitListenfd()
     {
         if(!socket_->Create())
+        {
             throw std::runtime_error("Create() failed, error code: " + std::to_string(errno));
+        }
 
         if(!socket_->SetReuseAddress())
+        {
             throw std::runtime_error("SetReuseAddress() failed, error code: " + std::to_string(errno));
-        
+        }
+
         if(!socket_->SetNonBlock())
+        {
             throw std::runtime_error("SetNonBlocking() failed, error code: " + std::to_string(errno));
-        
+        }
+
         if(!socket_->Bind(port_))
+        {
             throw std::runtime_error("Bind() failed, error code: " + std::to_string(errno));
-        
+        }
+
         if(!socket_->Listen())
+        {
             throw std::runtime_error("Listen() failed, error code: " + std::to_string(errno));
-        
+        }
+
         std::cout << "Acceptor starts to listen, waiting for connection..." << std::endl;
 
         return socket_->Fd();

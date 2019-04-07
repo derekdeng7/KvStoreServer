@@ -1,13 +1,16 @@
 #ifndef _KVSTORESERVER_NET_TASK_HPP_
 #define _KVSTORESERVER_NET_TASK_HPP_
 
-#include "buffer.hpp"
-#include "../include/callback.hpp"
-#include "declear.hpp"
-
-#include <iostream>
+#include <cstdlib>
 #include <string>
 #include <functional>
+#include <sstream>
+#include <vector>
+
+#include "buffer.hpp"
+#include "declear.hpp"
+#include "../include/callback.hpp"
+#include "../db/lsmTree.hpp"
 
 namespace KvStoreServer{
 
@@ -17,19 +20,15 @@ namespace KvStoreServer{
         Task()
         {}
 
-        Task(SendCallback sendCallback, Message message)
-          : sendCallback_(sendCallback),
-            message_(message)
-        {}
-
-        virtual ~Task()
+        Task(SendCallback sendCallback, std::string message)
+          : sendCallback_(sendCallback), message_(message)
         {}
 
         void virtual processTask() = 0;
 
     protected:
         SendCallback sendCallback_;
-        Message message_;
+        std::string message_;
     };
 
 
@@ -42,7 +41,7 @@ namespace KvStoreServer{
             sockfd_(sockfd)
         {}
 
-        TaskInEventLoop(SendCallback callback, Message message)
+        TaskInEventLoop(SendCallback callback, std::string message)
           : Task(callback, message)
         {}
 
@@ -66,32 +65,71 @@ namespace KvStoreServer{
     class TaskInSyncQueue : public Task
     {
     public:
-        TaskInSyncQueue(SendCallback callback, Message message)
+        TaskInSyncQueue(SendCallback callback, std::string message)
           : Task(callback, message)
         {}
 
-        void SetCallback(const GetCallback& gcallback, const PutCallback& pcallback)
+        void SetCallback(GetCallback getCallback, PutCallback putCallback)
         {
-            getCallback_ = gcallback;
-            putCallback_ = pcallback;
+            getCallback_ = getCallback;
+            putCallback_ = putCallback;
         }
 
         void virtual processTask()
         {
-            if(sendCallback_)
+            if(!sendCallback_)
             {
-                if(message_.option == 1)
-                {
-                    std::cout << "get value of key:" << message_.entry.internalKey.key << std::endl;
-                    message_.flag = getCallback_(message_.entry.internalKey, message_.entry.value);
-                    sendCallback_(message_);
-                }
-                else if(message_.option == 2)
-                {
-                    std::cout << "put key-value: " << message_.entry.internalKey.key << "-" << message_.entry.value.str << std::endl;
-                    putCallback_(message_.entry);
-                }
+                return;
             }
+            
+            sendCallback_(ProcessTask());
+        }
+
+        std::string ProcessTask()
+        {
+            std::vector<std::string> argVec; 
+            std::string arg;
+            std::stringstream ss(message_);
+
+            while(ss >> arg)
+            {
+                argVec.push_back(arg);
+            }
+
+            int argNum = argVec.size();
+            LSMTree* lsmTree = LSMTree::getInstance();
+            
+            if(!strcasecmp(argVec[0].c_str(), "put") && argNum == 3)
+            {
+                lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
+                return message_ + " successfully!";
+            }
+            
+            if(!strcasecmp(argVec[0].c_str(), "get") && argNum == 2)
+            {
+                ValueType value;
+                bool flag = lsmTree->Get(atoi(argVec[1].c_str()), value);
+                if(!flag)
+                {
+                    return "key " + argVec[1] + " does not exist!";
+                }
+                
+                return message_ + ":" + value.str;
+            }
+            
+            if(!strcasecmp(argVec[0].c_str(), "update") && argNum == 3)
+            {
+                lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
+                return message_ + " successfully!";
+            }
+            
+            if(!strcasecmp(argVec[0].c_str(), "remove") && argNum == 2)
+            {
+                lsmTree->Remove(atoi(argVec[1].c_str()));
+                return message_ + " successfully!";
+            }
+
+            return std::string("Argument Error. Use \"help\" for help.");
         }
 
     private:

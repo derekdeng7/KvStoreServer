@@ -12,13 +12,13 @@ namespace KvStoreServer{
 
     typedef std::function<void()> EventCallback;
     typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;
+
+    typedef std::function<void(const std::string& message)> SendCallback;
     typedef std::function<void()> WriteCompleteCallback;
-    typedef std::function<void(int sockdf)> CloseConnectionCallback;
     typedef std::function<void(int sockfd)> RemoveConnectionCallback;
-    
-    typedef std::function<void(Message message)> SendCallback;
+
     typedef std::function<bool(const KeyType& key, ValueType& value)> GetCallback;
-    typedef std::function<void(const Entry& entry)> PutCallback;
+    typedef std::function<void(const KeyType& key, const ValueType& value)> PutCallback;
 
 }
 

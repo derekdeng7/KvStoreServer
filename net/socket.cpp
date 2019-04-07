@@ -3,11 +3,15 @@
 namespace KvStoreServer{
     
     Socket::Socket()
-        :fd_(-1) 
+      : fd_(-1) 
     {}
 
     Socket::Socket(int fd)
-        :fd_(fd)
+      : fd_(fd)
+    {}
+        
+    Socket::Socket(int fd, sockaddr_in addr)
+      : fd_(fd), addr_(addr)
     {}
 
     int Socket::Fd() const
@@ -15,9 +19,9 @@ namespace KvStoreServer{
         return fd_;
     }
 
-    sockaddr_in Socket::Serveraddr() const
+    sockaddr_in Socket::ServerAddr() const
     {
-        return servaddr_;
+        return addr_;
     }
 
     bool Socket::Valid() const
@@ -30,15 +34,25 @@ namespace KvStoreServer{
         fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         return fd_ != -1;
     }
+        
+    bool Socket::Connect(const Address& addr)
+    {
+        memset(&addr_, 0, sizeof(addr_));
+        addr_.sin_family = AF_INET;
+        addr_.sin_addr.s_addr = addr.Ip();
+        addr_.sin_port = htons(addr.Port());
+
+        return 0 == connect(fd_, (const struct sockaddr*)&addr_, sizeof(addr_));
+    }
 
     bool Socket::Bind(uint16_t port)
     {
-        memset(&servaddr_, 0, sizeof(servaddr_));
-        servaddr_.sin_family = AF_INET;
-        servaddr_.sin_addr.s_addr = htonl(INADDR_ANY);
-        servaddr_.sin_port = htons(port);
+        memset(&addr_, 0, sizeof(addr_));
+        addr_.sin_family = AF_INET;
+        addr_.sin_addr.s_addr = htonl(INADDR_ANY);
+        addr_.sin_port = htons(port);
 
-        return 0 == bind(fd_, (const struct sockaddr*)&servaddr_, sizeof(servaddr_));
+        return 0 == bind(fd_, (const struct sockaddr*)&addr_, sizeof(addr_));
     }
 
     bool Socket::Listen()

@@ -5,15 +5,15 @@
 
 namespace KvStoreServer{
 
-    EventLoop::EventLoop()
+    EventLoop::EventLoop(size_t threadNum)
        :quit_(false),
         eventfd_(CreateEventfd()),
         threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id())),
+        threadNum_(threadNum),
+        threadPool_(nullptr),
         epoller_(new Epoll()),
         wakeupfdChannel_(nullptr)
-    {
-        
-    }
+    {}
     
     EventLoop::~EventLoop()
     {
@@ -30,10 +30,16 @@ namespace KvStoreServer{
             std::bind(&EventLoop::HandleRead, this)
         );
         wakeupfdChannel_->AddChannel();
+
+        threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>(threadNum_);
+        threadPool_->Start();
     }
 
     void EventLoop::Close()
     {
+        std::cout << "threadPool_.use_count: " << threadPool_.use_count() << std::endl;
+        threadPool_->Stop();
+
         quit_ = true;
         if(!isInLoopThread())
         {
@@ -110,6 +116,16 @@ namespace KvStoreServer{
         {
             std::cout << "EventLoop::HandleReading() reads " << n << " bytes instead of 8" << std::endl;
         } 
+    }
+
+    void EventLoop::AddTask(const TaskInSyncQueue& task)
+    {
+        threadPool_->AddTask(task);
+    }
+
+    size_t EventLoop::GetThreadNum() const
+    {
+        return threadNum_;
     }
 
     void EventLoop::WakeUp()

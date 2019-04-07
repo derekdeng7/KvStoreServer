@@ -1,7 +1,6 @@
 #ifndef _KVSTORESERVER_NET_BUFFER_HPP_
 #define _KVSTORESERVER_NET_BUFFER_HPP_
 
-#include "declear.hpp"
 #include "../include/base.hpp"
 
 #include <string>

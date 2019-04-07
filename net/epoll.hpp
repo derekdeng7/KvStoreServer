@@ -26,7 +26,7 @@ namespace KvStoreServer{
    
   private:   
       int epollfd_;
-      epoll_event events_[MAX_EVENTS];
+      epoll_event events_[MAXEVENTNUM];
     
   };
 

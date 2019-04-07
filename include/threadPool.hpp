@@ -16,9 +16,9 @@ namespace KvStoreServer {
     class ThreadPool
     {
     public:
-        ThreadPool()
-        : syQueue_(),
-          lsmTree_(nullptr),
+        ThreadPool(size_t threadNum = std::thread::hardware_concurrency())
+        : threadNum_(threadNum),
+          syQueue_(),
 		      running_(true)
         {}
 
@@ -30,16 +30,10 @@ namespace KvStoreServer {
         ThreadPool(const ThreadPool&) = delete;
         ThreadPool& operator =(const ThreadPool&) = delete;
 
-        void Start(int numThreads)
+        void Start()
 	      {
-            lsmTree_ = std::make_shared<LSMTree>();
-            lsmTree_->Start();
-
-            getCallback_ = std::bind(&LSMTree::Get, lsmTree_, std::placeholders::_1, std::placeholders::_2);
-            putCallback_ = std::bind(&LSMTree::Put, lsmTree_, std::placeholders::_1);
-
 		        std::cout << "ThreadPool start" << std::endl;
-		        for (int i = 0; i < numThreads; ++i)
+		        for (size_t i = 0; i < threadNum_; ++i)
 		        {
 			          threadgroup_.push_back(std::make_shared<std::thread>(&ThreadPool::RunInThread, this));
 		        } 
@@ -87,9 +81,9 @@ namespace KvStoreServer {
             threadgroup_.clear();
         }
 
+        size_t threadNum_;
         std::list<std::shared_ptr<std::thread>> threadgroup_; 
         SyncQueue<T> syQueue_; 
-        std::shared_ptr<LSMTree> lsmTree_;
         std::atomic_bool running_;
         std::once_flag flag_;
 

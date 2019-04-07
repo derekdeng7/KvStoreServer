@@ -8,6 +8,7 @@ namespace KvStoreServer{
     class Buffer;
     class Channel;
     class ChannelCallback;
+    class Client;
     class Connector;
     class Epoll;
     class EventLoop;
