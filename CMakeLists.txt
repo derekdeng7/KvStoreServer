@@ -15,6 +15,7 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/db
   ${PROJECT_SOURCE_DIR}/net
+  ${PROJECT_SOURCE_DIR}/kvStore
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -24,9 +25,10 @@ set(CMAKE_CXX_FLAGS "-g -Wall -pthread")
 
 add_subdirectory(db)
 add_subdirectory(net)
+add_subdirectory(kvStore)
 
 add_executable(KvStoreServer ${PROJECT_SOURCE_DIR}/test/testServer.cpp)
-target_link_libraries(KvStoreServer net_lib db_lib)
+target_link_libraries(KvStoreServer kvStore_lib net_lib db_lib)
 
-add_executable(KvStoreClient ${PROJECT_SOURCE_DIR}/test/client.cpp)
-
+add_executable(KvStoreClient ${PROJECT_SOURCE_DIR}/test/testClient.cpp)
+target_link_libraries(KvStoreClient kvStore_lib net_lib db_lib)
