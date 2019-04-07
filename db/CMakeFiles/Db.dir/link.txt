@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib/libDb.a  CMakeFiles/Db.dir/compaction.cpp.o CMakeFiles/Db.dir/level.cpp.o CMakeFiles/Db.dir/log.cpp.o CMakeFiles/Db.dir/lsmTree.cpp.o CMakeFiles/Db.dir/skipList.cpp.o CMakeFiles/Db.dir/ssTable.cpp.o
-/usr/bin/ranlib ../lib/libDb.a

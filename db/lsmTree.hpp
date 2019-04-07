@@ -15,45 +15,37 @@ namespace KvStoreServer{
     class LSMTree : public SyncThread<Entry>   
     {
     public:
-        LSMTree()
-          : SyncThread<Entry>(),
-            log_(new Log()), 
-            muTable_(new MemTable(MAXHEIGHT)), 
-            immuTable_(new MemTable(MAXHEIGHT))
-        {}
-
-        ~LSMTree()
+        static LSMTree* getInstance()
         {
-            Stop();
+            static LSMTree instance;
+            return &instance;
         }
 
-        void Start()
+        void Start();
+        bool Get(const KeyType& key, ValueType& value);
+        void Put(const KeyType& key, const ValueType& value);
+        void Remove(const KeyType& key);
+
+    private:
+        struct ObjectCreator
         {
-            InitFromFile();
-            compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
-            
-            StartThread();
-        }
+            ObjectCreator()
+            {
+                LSMTree::getInstance();
+            }
+        };
+        static ObjectCreator objectCreator_;
+
+        LSMTree();
+        ~LSMTree();
+        LSMTree(const LSMTree&) = delete;
+        LSMTree& operator=(const LSMTree&) = delete;
 
         bool InitFromFile();
-        bool Get(const KeyType& key, ValueType& value);
-        void Put(const Entry& entry);
-    
-    private:
         bool InitFromEmpty();
-
-        virtual void ProcessTask(const Entry& entry)
-        {
-            return Insert(entry);
-        }
-
-        bool ReadLSMTreeMeta()
-        {
-            FileOperator fp("rb");
-            return fp.Read(&meta_, 0, sizeof(LsmTreeMeta));
-        }
-
+        bool ReadLSMTreeMeta();
         void Insert(const Entry& entry);
+        virtual void ProcessTask(const Entry& entry);
         
         LsmTreeMeta meta_;
         std::unique_ptr<Log> log_;

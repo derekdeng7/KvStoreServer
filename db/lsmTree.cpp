@@ -5,6 +5,28 @@
 
 namespace KvStoreServer{
 
+    LSMTree::ObjectCreator LSMTree::objectCreator_;
+
+    LSMTree::LSMTree()
+      : SyncThread<Entry>(),
+        log_(new Log()), 
+        muTable_(new MemTable(MAXHEIGHT)), 
+        immuTable_(new MemTable(MAXHEIGHT))
+    {}
+
+    LSMTree::~LSMTree()
+    {
+        Stop();
+    }
+
+    void LSMTree::Start()
+    {
+        InitFromFile();
+        compaction_ = std::unique_ptr<Compaction>(new Compaction(meta_.levelNum));
+        
+        StartThread();
+    }
+
     bool LSMTree::InitFromEmpty()
     {
         FileOperator fp("wb+");
@@ -72,10 +94,22 @@ namespace KvStoreServer{
         } 
     }
 
-    void LSMTree::Put(const Entry& entry)
+    void LSMTree::Put(const KeyType& key, const ValueType& value)
     {
+        Entry entry(key, value);
         log_->AddTask(entry);
         AddTask(entry);
+    }
+
+    void LSMTree::Remove(const KeyType& key)
+    {
+        Put(key, DELETETAG);
+    }
+
+    bool LSMTree::ReadLSMTreeMeta()
+    {
+        FileOperator fp("rb");
+        return fp.Read(&meta_, 0, sizeof(LsmTreeMeta));
     }
 
     void LSMTree::Insert(const Entry& entry)
@@ -97,5 +131,10 @@ namespace KvStoreServer{
             assert(muTable_ == NULL);
             muTable_ = std::unique_ptr<MemTable>(new MemTable(MAXHEIGHT));
         }
+    }
+
+    void LSMTree::ProcessTask(const Entry& entry)
+    {
+        return Insert(entry);
     }
 }
