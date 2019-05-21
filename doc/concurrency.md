@@ -42,7 +42,34 @@
    * notify_one()：唤醒某个等待(wait)线程。如果当前没有等待线程，则该函数什么也不做，如果同时存在多个等待线程，则唤醒某个线程是不确定的；
    * notify_all()：唤醒所有的等待(wait)线程。如果当前没有等待线程，则该函数什么也不做。
   
+### std::atomic_flag
+  ```
+    //std::atomic_flag实现自旋锁
+    std::atomic_flag lock = ATOMIC_FLAG_INIT;               //初始化，默认为false
+    while (lock.test_and_set(std::memory_order_acquire)) ;  //访问了一次就置true
+    lock.clear(std::memory_order_release);                  //clear()置false
+    
+  ```
   
+### std::atomic 
+  ```
+    std::atomic<void*> rep_;                                 //原子指针
+    
+    //C++11在标准库中引入了memory model，意义在于我们可以在high level language层面实现对在多处理器中多线程共享内存交互的控制
+    rep_.store(v, std::memory_order_release);                //修改被封装的值； 
+    void* pointer = rep_.load(std::memory_order_acquire);    //读取被封装的值；
+  ```
+
+### memory_order
+  * Sequential consistency：顺序一致性，默认的选项，其不允许reorder，那么也会带来一些性能损失
+  * Relaxed ordering：在单个线程内所有原子操作基本上就是代码顺序顺序进行的，这就是唯一的限制了。两个来自不同线程的原子操作是任意顺序；
+  * Release-acquire：来自不同线程的两个原子操作顺序可能会不一致，需要两个线程进行一下同步（synchronize-with）限制一下它们的顺序。x86就是Release-acquire语义。
+  ```
+    aquire语义：load之后的读写操作无法被重排至load之前。即load-load，load-store不能被重排；
+    release语义：store之前的读写操作无法被重排至store之后。即load-store，store-store不能被重排。
+
+  ```
+  * Release-consume：弱化Release-acquire的同步范围，提高性能。
   
   
   
