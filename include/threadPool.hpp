@@ -53,7 +53,7 @@ namespace KvStoreServer {
         void RunInThread()
         {
             while (running_)
-            {
+            { 
                 std::list<T> list;
                 syQueue_.Take(list);
 
