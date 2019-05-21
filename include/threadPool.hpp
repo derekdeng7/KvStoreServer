@@ -19,24 +19,24 @@ namespace KvStoreServer {
         ThreadPool(size_t threadNum = std::thread::hardware_concurrency())
         : threadNum_(threadNum),
           syQueue_(),
-		      running_(true)
+	  running_(true)
         {}
 
         ~ThreadPool()
-        { 
-		        Stop();
+        {
+		Stop();
         }
 
         ThreadPool(const ThreadPool&) = delete;
         ThreadPool& operator =(const ThreadPool&) = delete;
 
         void Start()
-	      {
-		        std::cout << "ThreadPool start" << std::endl;
-		        for (size_t i = 0; i < threadNum_; ++i)
-		        {
-			          threadgroup_.push_back(std::make_shared<std::thread>(&ThreadPool::RunInThread, this));
-		        } 
+	{
+		std::cout << "ThreadPool start" << std::endl;
+		for (size_t i = 0; i < threadNum_; ++i)
+		{
+			threadgroup_.push_back(std::make_shared<std::thread>(&ThreadPool::RunInThread, this));
+		} 
         }
 
         void Stop()
