@@ -55,7 +55,8 @@
   ```
     std::atomic<void*> rep_;                                 //原子指针
     
-    //C++11在标准库中引入了memory model，意义在于我们可以在high level language层面实现对在多处理器中多线程共享内存交互的控制
+    //C++11在标准库中引入了memory model，意义在于我们可以在high 
+    //level language层面实现对在多处理器中多线程共享内存交互的控制
     rep_.store(v, std::memory_order_release);                //修改被封装的值； 
     void* pointer = rep_.load(std::memory_order_acquire);    //读取被封装的值；
   ```
