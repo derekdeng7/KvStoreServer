@@ -75,6 +75,33 @@
   * Compact：将小树合并为大树：在大树上使用二分查找的效率比在多颗小树下进行二分查找要快得多（m棵小树需要`(N/m)*logN`）。
  
 ### leveldb的Compaction合并过程
+　　在leveldb中compaction主要包括Manual Compaction和Auto Compaction，在Auto Compaction中又包含了MemTable Compaction和SSTable Compaction。
+#### Manual Compaction
+　　leveldb中manual compaction是用户指定需要做compaction的key range，调用接口CompactRange来实现，它的主要流程为：
+  * 计算和Range有重合的MaxLevel；
+  * 从level 0 到 MaxLevel依次在每层对这个Range做Compaction；
+  * 做Compaction时会限制选择做Compaction文件的大小，这样可能每个level的CompactRange可能需要做多次Compaction才能完成。
+### SSTable Compaction
+##### 启动条件（条件1的优先级高于条件2）
+  * 每个Level的文件大小或文件数超过了这个Level的限制（L0对比文件个数，其它Level对比文件大小。主要是因为L0文件之间可能重叠，文件过多影响读访问，而其它level文件不重叠，限制文件总大小，可以防止一次compaction IO过重）；
+  * 含有被寻道次数超过一定阈值的文件(这个是指读请求查找可能去读多个文件，如果最开始读的那个文件未查找到，那么这个文件就被认为寻道一次，当文件的寻道次数达到一定数量时，就认为这个文件应该去做compaction)。
+##### 触发条件
+  * 任何改变了上面两个条件的操作，都会触发Compaction，即调用MaybeScheduleCompaction；
+  * 涉及到第一个条件改变，就是会改变某层文件的文件数目或大小，而只有Compaction操作之后才会改变这个条件；
+  * 涉及到第二个条件的改变，可能是读操作和scan操作(scan操作是每1M数据采样一次，获得读最后一个key所寻道的文件，1M数据的cost大约为一次寻道)。
+##### 文件选取
+  * 每个level都会记录上一次Compaction选取的文件所含Key的最大值，作为下次compaction选取文件的起点；
+  * 对于根据启动条件1所做的Compaction，选取文件就从上次的点开始选取，这样保证每层每个文件都会选取到；
+  * 对于根据启动条件2所做的Compaction，需要做compaction的文件本身就已经确定了Level + 1层文件的选取，就是和level层选取的文件有重合的文件；
+  * 在leveldb中在L层会选取1个文件，理论上这个文件最多覆盖的文件数为12个（leveldb中默认一个文件最大为2M，每层的最大数据量按照10倍增长。这样L层的文件在未对齐的情况下最多覆盖L+1层的12个文件），这样可以控制一次Compaction的最大IO为（1+12）* 2M读IO，总的IO不会超过52M。
+### MemTable Compaction
+　　MemTable Compaction最重要的是产出的文件所在层次的选择，它必须满足如下条件： 假设最终选择层次L，那么文件必须和`[0, L-1]`所有层的文件都没有重合，且对L+1层文件的覆盖不能超过一定的阈值（保证Compaction IO可控)。
+##### Compaction文件产出时机
+  * 文件大小达到一定的阈值；
+  * 产出文件对Level+2层有交集的所有文件的大小超过一定阈值。
+### Compaction时key丢弃的两个条件
+  * last_sequence_for_key <= smallest_snapshot (有一个更新的同样的user_key比最小快照要小）；
+  * key_type == del && key <= smallest_snapshot && IsBaseLevelForKey（key的类型是删除，且这个key的版本比最小快照要小，并且在更高Level没有同样的user_key)。
  
 ### 
 
