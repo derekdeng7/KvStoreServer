@@ -41,6 +41,11 @@
   * LSM Tree是为了优化数据库写性能而出现的。在牺牲了数据库一定的读能力的条件下，极大改善了数据库的写能力。它要求一棵树始终位于内存（小树），另一棵树位于磁盘（大树），小树可以是红黑树、跳跃表（参考LevelDB），甚至可以是B树，而大树则通常是B树或其变种，所以LSM Tree中的索引是可以选择的。
   * **传统的关系数据库使用B+树最大的性能问题是会产生大量的随机IO，随着新数据的插入，叶子节点会慢慢分裂，逻辑上连续的叶子节点在物理上往往不连续，甚至分离的很远，做范围查询时，会产生大量读随机IO**，因为你无法保证节点常驻内存，尤其是当B+树管理的索引量很大的时候。这导致数据库读写性能急剧下降。
   * LSM树的设计思想是把一颗大树拆分成N棵小树，它首先写入到内存中（内存没有寻道速度的问题，随机写的性能得到大幅提升），在内存中构建一颗有序小树，随着小树越来越大，内存的小树会flush到磁盘上。**磁盘中的树定期可以做merge操作，合并成一棵大树以优化读性能。无论是内存的小树flush到磁盘，还是磁盘中的树合并，都是顺序IO为主，极大程度地避免了随机io，因此具有写入速度快的特点**。
+  
+### LSM Tree与level的关系
+  * LSM存储模型：牺牲读性能，提高随机写性能；
+  * Level存储架构：尽可能地优化读性能，同时减少对写性能的影响。假设没有Level的概念，每次读请求都要去访问多个文件，于是才有Level的概念去做compaction，尽可能减少读取的文件数，同时又保证了每次Compaction IO的数据量，保证对正常的写请求影响不会太大；
+  * LSM和Level之间是相互均衡的关系，它们决定了读写性能。在不同的应用场景下，我们需要在两者间有所取舍。
 
 ### LSM Tree读性能如何保证
 　　LSM Tree放弃磁盘读性能来换取写的顺序性，但不代表LSM Tree的读性能就不理想。
@@ -54,7 +59,29 @@
   * SSTable文件。即硬盘上的SSTable，文件尾部追加了一块索引，记录key->offset，提高随机读的效率。SST文件为Level 0到Level N多层，每一层包含多个SST文件；单个SST文件容量随层次增加成倍增长；Level0的SST文件由Immutable MemTable直接Dump产生，其他Level的SST文件由其上一层的文件和本层文件归并产生。
   * Manifest文件。 Manifest文件中记录SST文件在不同Level的分布，单个SST文件的最大最小key，以及其他一些LevelDB需要的元信息。
   * Current文件。从上面的介绍可以看出，LevelDB启动时的首要任务就是找到当前的Manifest，而Manifest可能有多个。Current文件简单的记录了当前Manifest的文件名。
+  
+### VersionSet, Version, VersionEdit
+  * Version保存当前磁盘以及内存中的文件信息，一般只有一个version为”current version”。同时还保存了一系列的历史version，这些version的存在是因为有读操作还在引用（iterator和get，Compaction操作后会产生新的version作为current version
+  * VersionSet就是一系列Version的集合
+  * VersionEdit表示Version之间的变化，表示增加了多少文件，删除了多少文件
+  
+### Snapshot
+  * 快照提供了一个当前KV存储的一个可读视图，使得读取操作不受写操作影响，可以在读操作过程中始终看到一致的数据
+  * 一个快照对应当前存储的最新数据版本号
 
+### MemTable, Immutable MemTable
+  * MemTable是leveldb的内存缓存。它也提供了数据的写入，删除，读取等操作接口。它内部采用Skiplist作为数据组织结构，同时它使用自己实现的Arena作为内存分配器。
+  * Immutable MemTable和MemTable结构是完全一样的，只不过它是只读的，当MemTable中的数据量达到一定程度时会转换成Immutable MemTable。
+
+### TableBuilder, BlockBuilder
+  * TableBuilder: 将数据按照sst文件的格式组织后，写入sst文件
+  * BlockBuilder: 将数据按照Block的格式组织起来，被TableBuilder使用
+  * BuildTable: 在将MemTable的数据写入sst时调用，使用TableBuilder来实现
+
+### TableCache, BlockCache
+　　TableCache和BlockCache底层都是用了LRUCache的数据结构
+  * TableCache: 缓存了Table相关的信息，包括Table对应的File指针，以及Table对象的指针，Table对象包含了Table的元数据，索引信息等。可以防止过多的文件open
+  * BlockCache: 缓存块数据
 
 ### leveldb的Put写过程
   * `DB::Put()`操作会将(key,value)转化成writebatch后，通过`DBImpl::Write()`接口来完成
