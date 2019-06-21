@@ -72,6 +72,11 @@
 ### MemTable, Immutable MemTable
   * MemTable是leveldb的内存缓存。它也提供了数据的写入，删除，读取等操作接口。它内部采用Skiplist作为数据组织结构，同时它使用自己实现的Arena作为内存分配器。
   * Immutable MemTable和MemTable结构是完全一样的，只不过它是只读的，当MemTable中的数据量达到一定程度时会转换成Immutable MemTable。
+  
+### 跳跃表（Skiplist）
+ * 单纯比较单线程性能，跳跃表和RB-Tree可以说相差不大，都是O(logN)，但跳跃表的实现比RB-Tree简单很多。
+ * 跳跃表存储的节点更多，更为消耗内存。
+ * 在并发环境下，跳跃表的优势体现在更新的局部性更好，涉及的节点更少，锁需要盯住的节点更少，多线程之间争夺锁的代价也就更小。
 
 ### TableBuilder, BlockBuilder
   * TableBuilder: 将数据按照sst文件的格式组织后，写入sst文件
