@@ -1,5 +1,7 @@
 # leveldb
 
+  [leveldb-handbook](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
+  
 ### 关系型数据库：
 　　关系型数据库，是指采用了关系模型来组织数据的数据库，最大特点就是事务的一致性。简单来说，关系模型指的就是二维表格模型，而一个关系型数据库就是由二维表及其之间的联系所组成的一个数据组织。
 #### 优点
@@ -51,9 +53,6 @@
 　　LSM Tree放弃磁盘读性能来换取写的顺序性，但不代表LSM Tree的读性能就不理想。
   * 内存的速度远超磁盘，1000倍以上。而读取的性能提升，主要还是依靠内存命中率而非磁盘读的次数。
   * 写入占用更少磁盘的IO，读取就能获取更长时间的磁盘IO使用权，从而也可以提升读取效率。例如LevelDb的SSTable虽然降低了了读的性能，但如果数据的读取命中率有保障的前提下，因为读取能够获得更多的磁盘IO机会，因此读取性能基本没有降低，甚至还会有提升。而写入的性能则会获得较大幅度的提升，基本上是5~10倍左右。
-
-### leveldb
-  [leveldb-handbook](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
   
 ### 跳跃表（Skiplist）
  * 单纯比较单线程性能，跳跃表和RB-Tree可以说相差不大，都是O(logN)，但跳跃表的实现比RB-Tree简单很多。
