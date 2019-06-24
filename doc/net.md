@@ -146,8 +146,8 @@ recv()和send()函数提供了和read和write差不多的功能.不过它们提�
   * 调用`close(sockfd)`时，内核检查此fd对应的socket上的引用计数。如果引用计数大于1则仅仅减1并返回。**如果等于1，内核才会真正销毁套接字（关闭连接只是附带结果）**。
   * 线程在未知引用计数大于1的情况下调用`close()`，以为连接已经关闭，不再作处理，会导致失去控制的socket阻塞在CLOSE_WAIT状态。服务器端如果积攒大量的COLSE_WAIT状态的socket，有可能将服务器资源耗尽，进而无法提供服务。
 #### 以服务端为例调用close()
-  * 情况一：向客户端发送一个RST报文（如果本地缓冲区仍有未读数据），丢弃本地缓冲区的未读数据，关闭socket并释放相关资源，此种方式为强制关闭，客户端无需回复。（l_onoff=1，l_linger=0）；
-  * 情况二：向客户端发送一个FIN报文，收到client端FIN ACK后，进入了FIN_WAIT_2阶段，可参考TCP四次挥手过程，此种方式为优雅关闭。如果在l_linger的时间内仍未完成四次挥手，则强制关闭。（ l_onoff=1，l_linger=1）
+  * 如果本地缓冲区仍有未发送数据时调用close()，会向客户端发送一个RST报文，丢弃本地缓冲区的未读数据，关闭socket并释放相关资源，此种方式为强制关闭，客户端无需回复。（l_onoff=1，l_linger=0）；
+  * 否则向客户端发送一个FIN报文，收到client端FIN ACK后，进入了FIN_WAIT_2阶段，可参考TCP四次挥手过程，此种方式为优雅关闭。如果在l_linger的时间内仍未完成四次挥手，则发送RST，强制关闭。（ l_onoff=1，l_linger=1）
  
 ### shutdown()
   * `shutdown()`**用于优雅关闭连接，它关闭socket连接而不会释放socket，需要再调用`close(sockfd)`释放套接字的资源**。
@@ -161,7 +161,7 @@ recv()和send()函数提供了和read和write差不多的功能.不过它们提�
   * 在多进程中如果一个进程中`shutdown(sfd, SHUT_RDWR)`后，其它所有的进程将无法进行通信；`close(sfd)`只会影响本进程，其他进程能继续使用（如果计数不为0）。
   
 ### Socket连接的优雅关闭（透明传递）
-  * 主动关闭连接：Server发送完数据后，调用`shundown(clientSock, SHUT_WR)`，向Client发送FIN，此时服务器socket变成close_wait状态。Client调用recv()返回0（如果出错则返回-1，直接close()结束），如果有数据要发送，可以继续发送，没有可以调用`shundown(serverSock, SHUT_WR)`或直接close()，会向Server发送FIN，Server调用recv()返回0，此时可以调用`shundown(clientSock, SHUT_RD)`，等一个RTT再调用close()（或者直接调用close）。**如果Client没有发送FIN，将导致Server一直留在clost_wait状态，占用系统资源，此时可以通过设置超时时间强制关闭套接字**。
+  * 主动关闭连接：server发送完数据后，调用`shundown(clientSock, SHUT_WR)`，向client发送FIN，此时服务器socket变成close_wait状态。Client调用recv()返回0（如果出错则返回-1，直接close()结束），如果有数据要发送，可以继续发送，没有可以调用`shundown(serverSock, SHUT_WR)`或直接close()，会向Server发送FIN，server调用recv()返回0，此时可以调用`shundown(clientSock, SHUT_RD)`，等一个RTT再调用close()（或者直接调用close）。**如果Client没有发送FIN，将导致Server一直留在clost_wait状态，占用系统资源，此时可以通过设置超时时间强制关闭套接字**。
   * 被动关闭连接：Client发送FIN（通过close()或者shundown(serverSock, SHUT_WR)，服务端无法区分），Server调用recv()返回0，调用`shundown(clientSock, SHUT_RD)`关闭接收操作，此时Server进入close_wait状态，如果有数据继续发送，发送完毕则调用`shundown(clientSock, SHUT_WR)`关闭发送操作，等一个RTT再调用close()释放socket资源。
 	
 ### RST
