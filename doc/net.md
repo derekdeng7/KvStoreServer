@@ -102,14 +102,14 @@
 ```
   * 成功时返回值大于0，代表实际read的字节数。
   * **读到文件的结束了返回值是0，这是非阻塞下才会出现，阻塞模式会直接阻塞；如果有读事件发生但返回0，则是收到FIN**。
-  * 失败时返回的值小于 0，如果错误为EINTR说明读是由中断引起的；如果为ECONNREST表示网络连接出了问题。
+  * 异常时返回的值小于 0，如果为EINTR说明读是由中断引起的；如果为EAGAIN，阻塞模式表示超时，非阻塞模式表示无数据可读；如果为EBADF表示主动关闭再读数据；如果为ECONNREST表示连接异常关闭（对方发送RST）之后再读数据。
 
 ### write()
 ```
   ssize_t write(int fd, const void *buf, size_t count);
 ```
   * 成功时返回值大于0，表示写了部分或者是全部的数据。
-  * 失败时返回的值小于 0，如果为EINTR表示在写的时候出现了中断错误；如果为EPIPE表示网络连接出现了问题（对方已经关闭了连接）。
+  * 失败时返回的值小于 0，如果为EINTR表示在写的时候出现了中断错误；如果为EBADF表示主动关闭再写数据；如果为EPIPE表示连接异常关闭（对方发送RST）之后再写数据。
   
 ### recv()和send()
 recv()和send()函数提供了和read和write差不多的功能.不过它们提供了第四个参数来控制读写操作.
@@ -140,25 +140,46 @@ recv()和send()函数提供了和read和write差不多的功能.不过它们提�
 ### select/epoll返回，是否一定可读
   * select/epoll返回可读，和`read()`去读，这是两个独立的系统调用，两个操作之间是有窗口期，可能数据被抢先读走了，也可能内核校验后把它丢弃了。也就是说select/epoll返回可读，紧接着去`read()`，不能保证一定可读。
 	* 惊群现象，就是一个典型场景。多个进程或者线程通过select/epoll监听一个listen socket，当有一个新连接完成三次握手之后，所有进程都会通过select/epoll被唤醒，但是最终只有一个进程或者线程accept到这个新连接，若是采用了阻塞IO，没有accept到连接的进程或者线程就block住了。
-	
-### Close()
-#### 阻塞
 
-### Close()是一次就能直接关闭的吗
-  * TCP四次挥手的第二次挥手后，服务端将进入CLOSE_WAIT半关闭状态，等待发送FIN的机会。这个状态持续的时间可能会很长，服务器端如果积攒大量的COLSE_WAIT状态的socket，有可能将服务器资源耗尽，进而无法提供服务。
-  * 调用`close(sockfd)`时，内核检查此fd对应的socket上的引用计数。如果引用计数大于1则仅仅减1并返回。如果等于1，内核才会真正通过发FIN来关闭TCP连接。
-  * 线程在未知引用计数大于1的情况下调用close，以为连接已经关闭，不再作处理，会导致失去控制的socket阻塞在CLOSE_WAIT状态。
+### close()
+#### 原理
+  * 调用`close(sockfd)`时，内核检查此fd对应的socket上的引用计数。如果引用计数大于1则仅仅减1并返回。**如果等于1，内核才会真正销毁套接字（关闭连接只是附带结果）**。
+	* 线程在未知引用计数大于1的情况下调用`close()`，以为连接已经关闭，不再作处理，会导致失去控制的socket阻塞在CLOSE_WAIT状态。服务器端如果积攒大量的COLSE_WAIT状态的socket，有可能将服务器资源耗尽，进而无法提供服务。
+#### 以服务端为例调用close()
+  * 情况一：向客户端发送一个RST报文（如果本地缓冲区仍有未读数据），丢弃本地缓冲区的未读数据，关闭socket并释放相关资源，此种方式为强制关闭，客户端无需回复。（l_onoff=1，l_linger=0）；
+	* 情况二：向客户端发送一个FIN报文，收到client端FIN ACK后，进入了FIN_WAIT_2阶段，可参考TCP四次挥手过程，此种方式为优雅关闭。如果在l_linger的时间内仍未完成四次挥手，则强制关闭。（ l_onoff=1，l_linger=1）
  
-### Shutdown()
-  * `SHUT_WR`关闭发送操作，即断开输出流；`SHUT_RD`关闭接收操作，即断开输入流；`SHUT_RDWR`同时断开 I/O 流
-  * 默认情况下，close()/closesocket()会立即向网络中发送FIN包，不管输出缓冲区中是否还有数据，而shutdown()会等输出缓冲区中的数据传输完毕再发送FIN包。也就意味着，调用close()/closesocket()将丢失输出缓冲区中的数据，而调用shutdown()不会。
-  * `shutdown(sockfd, SHUT_RDWR)`可以直接破坏socket连接但不会释放socket，再调用`close(sockfd)`将使服务器发出FIN而关闭连接。
-  * 在多进程中如果一个进程中`shutdown(sfd, SHUT_RDWR)`后其它的进程将无法进行通信. 如果一个进程`close(sfd)`将不会影响到其它进程。
+### shutdown()
+  * `shutdown()`**用于优雅关闭连接，它关闭socket连接而不会释放socket，需要再调用`close(sockfd)`释放套接字的资源**。
+  * `SHUT_WR`：关闭连接的读通道，套接字中不再有数据可接收，进程不能再对这样的套接字调用任何读函数（返回EOF）。该套接字接收的来自对端的任何数据都被确认，然后悄然丢弃。**如果当前接收缓存中仍有未取出数据或者以后再有数据到达，则TCP会向发送端发送RST包，将连接重置**。
+	* `SHUT_RD`：关闭连接的写通道，将发送缓存中的数据都发送完毕并收到所有数据的ACK后向对端发送FIN包，表明本端没有更多数据发送，这个是一个优雅关闭过程。进程不能再对这样的套接字调用任何写函数（检测到SIGPIPE）。
+	* `SHUT_RDWR`：同时断开I/O流，相当于调用shutdown两次：首先是以SHUT_RD，然后以SHUT_WR；
+	
+### close()与shutdown()的区别
+  * 默认情况下，`close()/closesocket()`会强制关闭连接，**不管输出缓冲区中是否还有数据**；而`shutdown()`会等输出缓冲区中的数据传输完毕再发送FIN包。也就意味着，调用`close()/closesocket()`将丢失输出缓冲区中的数据，而调用`shutdown()`不会。
+	* shutdown()会唤醒阻塞线程，close()不会唤醒阻塞线程；
+  * 在多进程中如果一个进程中`shutdown(sfd, SHUT_RDWR)`后，其它所有的进程将无法进行通信；`close(sfd)`只会影响本进程，其他进程能继续使用（如果计数不为0）。
   
 ### Socket连接的优雅关闭（透明传递）
   * 主动关闭连接：Server发送完数据后，调用`shundown(clientSock, SHUT_WR)`，向Client发送FIN，此时服务器socket变成close_wait状态。Client调用recv()返回0（如果出错则返回-1，直接close()结束），如果有数据要发送，可以继续发送，没有可以调用`shundown(serverSock, SHUT_WR)`或直接close()，会向Server发送FIN，Server调用recv()返回0，此时可以调用`shundown(clientSock, SHUT_RD)`，等一个RTT再调用close()（或者直接调用close）。**如果Client没有发送FIN，将导致Server一直留在clost_wait状态，占用系统资源，此时可以通过设置超时时间强制关闭套接字**。
   * 被动关闭连接：Client发送FIN（通过close()或者shundown(serverSock, SHUT_WR)，服务端无法区分），Server调用recv()返回0，调用`shundown(clientSock, SHUT_RD)`关闭接收操作，此时Server进入close_wait状态，如果有数据继续发送，发送完毕则调用`shundown(clientSock, SHUT_WR)`关闭发送操作，等一个RTT再调用close()释放socket资源。
-  
+	
+### RST
+#### RST的发送 
+  * 若发送FIN报文后没有收到client端的FIN ACK，server端会两次重传FIN报文，若一直收不到client端的FIN ACK，则会给client端发送RST信号，关闭socket并释放资源;
+	* 当缓冲区还有未读取的数据时，调用`close(sockfd)`函数关闭socket，会触发TCP发送RST，并不会等待对方返回ACK。
+#### client端如何知道已经接收到RST报文？
+　　server发送RST报文后，并不等待从client端接收任何ack响应，直接关闭socket。而client端收到RST报文后，也不会产生任何响应。client端收到RST报文后，程序行为如下：
+  * 阻塞模型：内核无法主动通知应用层出错，只有应用层主动调用read()或者write()这样的IO系统调用时，内核才会利用出错来通知应用层对端已经发送RST报文。
+  * 非阻塞模型：select/epoll会返回sockfd可读，应用层对其进行读取时，read()会报RST错误。
+  * 应用程序可以通过read()/write()函数出错返回后，获取errno来确定对端是否发送RST信号。
+#### RST处理
+　　client端收到RST信号后，如果调用read()读取，则会返回RST错误。在已经产生RST错误的情况下，继续调用write()，则会发生epipe错误。此时内核将向客户进程发送 SIGPIPE 信号，该信号默认会使进程终止，通常程序会异常退出（未处理SIGPIPE信号的情况下）。
+
+### FIN处理
+  * client收到FIN信号后，再调用read函数会返回0。因为FIN的接收，表明client端以后再无数据可以接收；对方发来FIN，表明对方不再发送数据了。
+	* 根据tcp协议，向一个FIN_WAIT2状态的TCP写入数据是没有问题的，所以此时client可以调用write函数，写入到发送缓冲区，并由tcp连接，发送到server的接收缓冲区。由于server端已经关闭了socket，所以此时的server接收缓冲区的内容都被抛弃，同时server端返回RST给客户端。
+
 ### 如果select返回可读，结果只读到0字节，什么情况
  　　select()返回可读，表示套接字接收到数据；read()返回0，表示数据意义是“对方关闭连接”（read返回0的唯一条件是对方优雅关闭了套接字）。
    
