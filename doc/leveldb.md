@@ -1,6 +1,4 @@
-# leveldb
-
-  [leveldb-handbook](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
+# [leveldb-handbook](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
   
 ### 关系型数据库：
 　　关系型数据库，是指采用了关系模型来组织数据的数据库，最大特点就是事务的一致性。简单来说，关系模型指的就是二维表格模型，而一个关系型数据库就是由二维表及其之间的联系所组成的一个数据组织。
