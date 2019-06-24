@@ -52,53 +52,26 @@
   * 内存的速度远超磁盘，1000倍以上。而读取的性能提升，主要还是依靠内存命中率而非磁盘读的次数。
   * 写入占用更少磁盘的IO，读取就能获取更长时间的磁盘IO使用权，从而也可以提升读取效率。例如LevelDb的SSTable虽然降低了了读的性能，但如果数据的读取命中率有保障的前提下，因为读取能够获得更多的磁盘IO机会，因此读取性能基本没有降低，甚至还会有提升。而写入的性能则会获得较大幅度的提升，基本上是5~10倍左右。
 
-### LevelDB整体结构
-  * MemTable：即内存中的SSTable，新数据会写入到这里，然后批量写入磁盘，以此提高写的吞吐量。
-  * Log：写MemTable前会写Log文件，即用WAL(Write Ahead Log)方式记录日志，如果机器突然掉电，内存中的MemTable丢失了，还可以通过日志恢复数据。WAL日志是很多传统数据库例如MySQL采用的技术。
-  * Immutable MemTable。内存中的MemTable达到指定的大小后，将不再接收新数据，同时会有新的MemTable产生，新数据写入到这个新的MemTable里，Immutable MemTable随后会写入硬盘，变成一个SST文件。
-  * SSTable文件。即硬盘上的SSTable，文件尾部追加了一块索引，记录key->offset，提高随机读的效率。SST文件为Level 0到Level N多层，每一层包含多个SST文件；单个SST文件容量随层次增加成倍增长；Level0的SST文件由Immutable MemTable直接Dump产生，其他Level的SST文件由其上一层的文件和本层文件归并产生。
-  * Manifest文件。 Manifest文件中记录SST文件在不同Level的分布，单个SST文件的最大最小key，以及其他一些LevelDB需要的元信息。
-  * Current文件。从上面的介绍可以看出，LevelDB启动时的首要任务就是找到当前的Manifest，而Manifest可能有多个。Current文件简单的记录了当前Manifest的文件名。
-  
-### VersionSet, Version, VersionEdit
-  * Version保存当前磁盘以及内存中的文件信息，一般只有一个version为”current version”。同时还保存了一系列的历史version，这些version的存在是因为有读操作还在引用（iterator和get，Compaction操作后会产生新的version作为current version
-  * VersionSet就是一系列Version的集合
-  * VersionEdit表示Version之间的变化，表示增加了多少文件，删除了多少文件
-  
-### Snapshot
-  * 快照提供了一个当前KV存储的一个可读视图，使得读取操作不受写操作影响，可以在读操作过程中始终看到一致的数据
-  * 一个快照对应当前存储的最新数据版本号
-
-### MemTable, Immutable MemTable
-  * MemTable是leveldb的内存缓存。它也提供了数据的写入，删除，读取等操作接口。它内部采用Skiplist作为数据组织结构，同时它使用自己实现的Arena作为内存分配器。
-  * Immutable MemTable和MemTable结构是完全一样的，只不过它是只读的，当MemTable中的数据量达到一定程度时会转换成Immutable MemTable。
+### leveldb
+  [leveldb-handbook](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
   
 ### 跳跃表（Skiplist）
  * 单纯比较单线程性能，跳跃表和RB-Tree可以说相差不大，都是O(logN)，但跳跃表的实现比RB-Tree简单很多。
  * 跳跃表存储的节点更多，更为消耗内存。
  * 在并发环境下，跳跃表的优势体现在更新的局部性更好，涉及的节点更少，锁需要盯住的节点更少，多线程之间争夺锁的代价也就更小。
 
-### TableBuilder, BlockBuilder
-  * TableBuilder: 将数据按照sst文件的格式组织后，写入sst文件
-  * BlockBuilder: 将数据按照Block的格式组织起来，被TableBuilder使用
-  * BuildTable: 在将MemTable的数据写入sst时调用，使用TableBuilder来实现
-
-### TableCache, BlockCache
-　　TableCache和BlockCache底层都是用了LRUCache的数据结构
-  * TableCache: 缓存了Table相关的信息，包括Table对应的File指针，以及Table对象的指针，Table对象包含了Table的元数据，索引信息等。可以防止过多的文件open
-  * BlockCache: 缓存块数据
-
 ### leveldb的Put写过程
-  * `DB::Put()`操作会将(key,value)转化成writebatch后，通过`DBImpl::Write()`接口来完成
+  * `DB::Put()`操作会将（key,value）转化成writebatch后，通过`DBImpl::Write()`接口来完成
   * 在`DBImpl::Write()`之前需要通过`DBImpl::MakeRoomForWrite()`来保证MemTable有空间来接受写请求，这个过程中可能阻塞写请求，以及进行Compaction;
   * `DBImpl::BuildBatchGroup()`类似于缓冲区，尽可能的将多个writebatch合并在一起然后写下去，能够提升吞吐量;
   * `Log::Write:AddRecord()`就是在写入MemTable之前，先在操作写入到Log文件中;
   * 最后`WriteBatchInternal::InsertInto()`会将数据写入到MemTable中。
 
 ### leveldb的Get读过程
-  * 首先判断options.snapshot是否为空，如果为不为空，快照值就取这个值，否则取最新数据的版本号;
+  * 首先判断options.snapshot是否为空，如果为非空，snapshot值就取这个值，否则取最新数据的版本号;
   * 依次尝试去内存中的MemTable和Immutable MemTable中查找；
-  * 在VersionSet中去查找：先逐层查找，确定key可能所在的文件。然后根据文件编号，在TableCache中查找，如果未命中，会将Table信息Load到cache中。再根据Table信息，确定key可能所在的Block。最后在BlockCache中查找Block，如果未命中，会将Block load到Cache中。然后在Block内查找key是否命中。
+  * 在VersionSet中去查找：先逐层查找，确定key可能所在的文件。**L0从文件编号大的sstable优先查找，因为文件编号较大的sstable中存储的总是最新的数据。非0层文件，一层中所有文件之间的key不重合，因此leveldb可以借助sstable的元数据（一个文件中最小与最大的key值）进行快速定位，每一层只需要查找一个sstable文件的内容**。
+  * 然后根据文件编号，在TableCache中查找，如果未命中，会将Table信息Load到cache中。再根据Table信息，确定key可能所在的Block。最后在BlockCache中查找Block，如果未命中，会将Block load到Cache中。然后在Block内查找key是否命中。
   * 更新读数据的统计信息，作为一个ssTable是否应该进行Compaction的依据。
   * 最后释放对Memtable，Immutable MemTable，VersionSet的引用
 
@@ -108,7 +81,7 @@
  
 ### leveldb的Compaction合并过程
 　　在leveldb中compaction主要包括Manual Compaction和Auto Compaction，在Auto Compaction中又包含了MemTable Compaction和SSTable Compaction。
-#### Manual Compaction
+### Manual Compaction
 　　leveldb中manual compaction是用户指定需要做compaction的key range，调用接口CompactRange来实现，它的主要流程为：
   * 计算和Range有重合的MaxLevel；
   * 从level 0 到 MaxLevel依次在每层对这个Range做Compaction；
@@ -134,7 +107,5 @@
 ### Compaction时key丢弃的两个条件
   * last_sequence_for_key <= smallest_snapshot (有一个更新的同样的user_key比最小快照要小）；
   * key_type == del && key <= smallest_snapshot && IsBaseLevelForKey（key的类型是删除，且这个key的版本比最小快照要小，并且在更高Level没有同样的user_key)。
- 
-### 
 
 ### 
