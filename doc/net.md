@@ -84,7 +84,7 @@
   * 调用ep_send_events_proc()进行扫描处理，即遍历rdllist链表中的epitem对象，针对每一个epitem对象调用ep_item_poll()函数去获取就绪事件的掩码；
   * 如果掩码不为0，说明该epitem对象对应的事件发生了，那么就将其对应的struct epoll_event类型的对象拷贝到用户态指定的内存中；
   * 如果掩码为0，则直接处理下一个epitem。
-#### ep_send_events_proc
+#### 源码中LT和ET的区别在ep_send_events_proc()中
 ```
   for (eventcnt = 0, uevent = esed->events; !list_empty(head) && eventcnt < esed->maxevents;) 
   {
@@ -111,28 +111,17 @@
 			uevent++;
 			if (epi->event.events & EPOLLONESHOT)
 				epi->event.events &= EP_PRIVATE_BITS;
-			else if (!(epi->event.events & EPOLLET)) //LT 模式
+			else if (!(epi->event.events & EPOLLET)) 		//LT模式和ET模式的区别在此
 			{	
-			/*源码中LT和ET的区别就在这此：
-                         如果是ET，epitem是不会再进入到readly list，
-                         除非fd再次发生了状态改变，使ep_poll_callback被调用。
-			 
-                         如果是LT, 此时此刻epoll_wait还没有返回，
-			 用户程序还没有开始处理事件或者数据，
-			 epoll自然也就无法区分哪些事件或者数据没有处理完，
-			 只好把所有的事件都重新插入到ready list。
-			 也就是说就算某个fd已经处理完了，仍然会出现在下一次epoll_wait的ready list中，
-			 再次判断它没有事件或者数据才移除出ready list。
-			 假如这一次ready list的所有fd的事件都处理完，且没有新的事件到达，
-			 epoll_wait会返回一个0，即空转一次.
-                         */
-
 				list_add_tail(&epi->rdllink, &ep->rdllist); //LT模式要重新加入到ready list
 				ep_pm_stay_awake(epi);
 			}
 		}
  }
 ```
+  * 如果是ET，epitem是不会再进入到readly list，除非fd再次发生了状态改变，使ep_poll_callback被调用。
+  * 如果是LT, 此时此刻epoll_wait还没有返回，用户程序还没有开始处理事件或者数据，**epoll自然也就无法区分哪些事件或者数据没有处理完，只好把所有的事件都重新插入到ready list。也就是说就算某个fd已经处理完了，仍然会出现在下一次epoll_wait的ready list中，再次判断它没有事件或者数据才移除出ready list。假如这一次ready list的所有fd的事件都处理完，且没有新的事件到达，epoll_wait会返回一个0，即空转一次**。
+
 
 ### 以socket为例的注册回调函数的工作原理
   * socket层会实现一个通用的poll回调函数，以tcp为例，这个poll回调函数就是tcp_poll()；
