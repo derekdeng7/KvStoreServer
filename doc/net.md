@@ -120,7 +120,7 @@
  }
 ```
   * 如果是ET，epitem是不会再进入到readly list，除非fd再次发生了状态改变，使ep_poll_callback被调用。
-  * 如果是LT, 此时此刻epoll_wait还没有返回，用户程序还没有开始处理事件或者数据，**epoll自然也就无法区分哪些事件或者数据没有处理完，只好把所有的事件都重新插入到ready list。也就是说就算某个fd已经处理完了，仍然会出现在下一次epoll_wait的ready list中，再次判断它没有事件或者数据才移除出ready list。假如这一次ready list的所有fd的事件都处理完，且没有新的事件到达，epoll_wait会返回一个0，即空转一次**。
+  * 如果是LT, 此时此刻epoll_wait还没有返回，用户程序还没有开始处理事件或者数据，**epoll自然也就无法区分哪些事件或者数据没有处理完，只好把所有的事件都重新插入到ready list。也就是说就算某个fd已经处理完了，仍然会出现在下一次epoll_wait的ready list中，再次判断它没有事件或者数据才移除出ready list。假如这一次ready list的所有fd的事件都处理完，且没有新的事件到达，那么下一次epoll_wait将返回0，即空转一次**。
 
 
 ### 以socket为例的注册回调函数的工作原理
