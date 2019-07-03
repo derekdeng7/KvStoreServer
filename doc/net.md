@@ -40,7 +40,7 @@
 ### 为什么IO多路复用要搭配非阻塞IO
   * IO多路复用只会告诉你fd对应的socket可读了，但不会告诉你有多少的数据可读。如果是非阻塞IO，循环读或者只读一次都不会有问题；如果是阻塞IO，最多只能读一次，因为你不知道第二次还有没有数据可读，一旦没有数据可读，会阻塞线程；
   * epoll的ET模式必须使用非阻塞IO，因为工程实现上用到了循环读；
-  * 多线程读同一个socket可能会有惊群现象：多个进程或者线程通过select或者epoll监听一个listen socket，当有一个新连接完成三次握手之后，所有进程都会通过select或者epoll被唤醒，但是最终只有一个进程或者线程accept到这个新连接，若是采用了阻塞IO，没有accept到连接的进程或者线程就被阻塞了。
+  * 多线程读同一个socket可能会有惊群现象：多个进程或者线程通过select或者epoll监听一个listen socket，当有一个新连接完成三次握手之后，所有进程都会通过select或者epoll被唤醒，但是最终只有一个进程或者线程accept到这个新连接，若是采用了阻塞IO，没有accept到连接的进程或者线程就被阻塞了。（nginx采用了accept_mutex或者reuseport的方式来避免惊群）。
 	
 ### Epoll源码详解
 #### int epoll_create(int size)
@@ -84,6 +84,55 @@
   * 调用ep_send_events_proc()进行扫描处理，即遍历rdllist链表中的epitem对象，针对每一个epitem对象调用ep_item_poll()函数去获取就绪事件的掩码；
   * 如果掩码不为0，说明该epitem对象对应的事件发生了，那么就将其对应的struct epoll_event类型的对象拷贝到用户态指定的内存中；
   * 如果掩码为0，则直接处理下一个epitem。
+#### ep_send_events_proc
+```
+  for (eventcnt = 0, uevent = esed->events; !list_empty(head) && eventcnt < esed->maxevents;) 
+  {
+		epi = list_first_entry(head, struct epitem, rdllink);
+		ws = ep_wakeup_source(epi);
+		if (ws) {
+			if (ws->active)
+				__pm_stay_awake(ep->ws);
+			__pm_relax(ws);
+		}
+		list_del_init(&epi->rdllink);	//从链表中移除
+		revents = ep_item_poll(epi, &pt);	// 获取事件
+
+		if (revents) 	// 获取到事件，需要copy到userspace，没有事件的fd此时才从真正意义上的移除出就绪队列
+		{	
+			if (__put_user(revents, &uevent->events) ||
+			    __put_user(epi->event.data, &uevent->data)) 
+		        {
+				list_add(&epi->rdllink, head);	//出错添加回去
+				ep_pm_stay_awake(epi);
+				return eventcnt ? eventcnt : -EFAULT;
+			}
+			eventcnt++;
+			uevent++;
+			if (epi->event.events & EPOLLONESHOT)
+				epi->event.events &= EP_PRIVATE_BITS;
+			else if (!(epi->event.events & EPOLLET)) //LT 模式
+			{	
+			/*源码中LT和ET的区别就在这此：
+                         如果是ET，epitem是不会再进入到readly list，
+                         除非fd再次发生了状态改变，使ep_poll_callback被调用。
+			 
+                         如果是LT, 此时此刻epoll_wait还没有返回，
+			 用户程序还没有开始处理事件或者数据，
+			 epoll自然也就无法区分哪些事件或者数据没有处理完，
+			 只好把所有的事件都重新插入到ready list。
+			 也就是说就算某个fd已经处理完了，仍然会出现在下一次epoll_wait的ready list中，
+			 再次判断它没有事件或者数据才移除出ready list。
+			 假如这一次ready list的所有fd的事件都处理完，且没有新的事件到达，
+			 epoll_wait会返回一个0，即空转一次.
+                         */
+
+				list_add_tail(&epi->rdllink, &ep->rdllist); //LT模式要重新加入到ready list
+				ep_pm_stay_awake(epi);
+			}
+		}
+ }
+```
 
 ### 以socket为例的注册回调函数的工作原理
   * socket层会实现一个通用的poll回调函数，以tcp为例，这个poll回调函数就是tcp_poll()；
