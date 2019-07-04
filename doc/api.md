@@ -1,4 +1,17 @@
-# 基于C++11的多线程编程
+# api总结
+
+### open与fopen 、read与fread、write与fwrite区别
+open系列函数 | fopen系列函数
+---|---
+一般用于打开设备文件（少数情况） | 一般用于打开普通文件（大多数情况）
+利用文件描述符操纵文件 | 利用文件指针操作文件
+open返回一个文件描述符 | fopen返回一个文件指针
+POSIX系统调用 | ANSI C库函数
+低层次IO | 高层次IO，对open的扩展和封装（故一次调用速度较慢）
+只能在POSIX操作系统上移植 | 可移植到任何操作系统
+非无缓冲区 | 有缓冲区（可减少调用次数）
+只能读取二进制或普通文本 | 可以读取一个结构
+可以指定要创建文件的访问权限 | 不能指定要创建文件的访问权限
 
 ### std::thread
   * 构造函数：std::thread(Function&& f, Args&&... args);（如创建线程运行foo f的成员函数bar：std::thread t1(&foo::bar, &f);）；
@@ -60,8 +73,7 @@
     rep_.store(v, std::memory_order_release);                //修改被封装的值； 
     void* pointer = rep_.load(std::memory_order_acquire);    //读取被封装的值；
   ```
-
-### memory_order
+#### 常用的memory_order
   * Sequential consistency：顺序一致性，默认的选项，其不允许reorder，那么也会带来一些性能损失
   * Relaxed ordering：在单个线程内所有原子操作基本上就是代码顺序顺序进行的，这就是唯一的限制了。两个来自不同线程的原子操作是任意顺序；
   * Release-acquire：来自不同线程的两个原子操作顺序可能会不一致，需要两个线程进行一下同步（synchronize-with）限制一下它们的顺序。x86就是Release-acquire语义。
