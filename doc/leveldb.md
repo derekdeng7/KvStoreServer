@@ -100,11 +100,9 @@
   * 在leveldb中在L层会选取1个文件，理论上这个文件最多覆盖的文件数为12个（leveldb中默认一个文件最大为2M，每层的最大数据量按照10倍增长。这样L层的文件在未对齐的情况下最多覆盖L+1层的12个文件），这样可以控制一次Compaction的最大IO为（1+12）* 2M读IO，总的IO不会超过52M。
 ### MemTable Compaction
 　　MemTable Compaction最重要的是产出的文件所在层次的选择，它必须满足如下条件： 假设最终选择层次L，那么文件必须和`[0, L-1]`所有层的文件都没有重合，且对L+1层文件的覆盖不能超过一定的阈值（保证Compaction IO可控)。
-##### Compaction文件产出时机
+### Compaction文件产出时机
   * 文件大小达到一定的阈值；
   * 产出文件对Level+2层有交集的所有文件的大小超过一定阈值。
 ### Compaction时key丢弃的两个条件
   * last_sequence_for_key <= smallest_snapshot (有一个更新的同样的user_key比最小快照要小）；
   * key_type == del && key <= smallest_snapshot && IsBaseLevelForKey（key的类型是删除，且这个key的版本比最小快照要小，并且在更高Level没有同样的user_key)。
-
-### 
