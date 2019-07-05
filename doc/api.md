@@ -13,6 +13,10 @@ POSIX系统调用 | ANSI C库函数
 只能读取二进制或普通文本 | 可以读取一个结构
 可以指定要创建文件的访问权限 | 不能指定要创建文件的访问权限
 
+### bzero和memset的区别
+  * `void bzero(void *s, int n)`是POSIX函数，`void *memset(void *buffer, int c, int count)`是C库函数；
+  * 在数组较小的情况下，bzero的效率比memset高；当数组超过一定大小之后，bzero的效率开始比memset低；数组越大，memset的性能优势越明显。而在数组较小的情况下，memset的性能甚至不如直接for循环对数组中的每一个字节置零的方法。
+
 ### std::thread
   * 构造函数：std::thread(Function&& f, Args&&... args);（如创建线程运行foo f的成员函数bar：std::thread t1(&foo::bar, &f);）；
   * 可被joinable的std::thread对象必须在他们销毁之前被主线程join()或者将其设置为detached。
