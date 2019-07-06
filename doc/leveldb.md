@@ -106,3 +106,17 @@
 ### Compaction时key丢弃的两个条件
   * last_sequence_for_key <= smallest_snapshot (有一个更新的同样的user_key比最小快照要小）；
   * key_type == del && key <= smallest_snapshot && IsBaseLevelForKey（key的类型是删除，且这个key的版本比最小快照要小，并且在更高Level没有同样的user_key)。
+
+### Rocksdb对leveldb的优化
+  * [RocksDB相比LevelDB的新特性](http://xiaqunfeng.cc/2017/02/23/RocksDB%E7%9B%B8%E6%AF%94LevelDB%E7%9A%84%E6%96%B0%E7%89%B9%E6%80%A7/)
+  * RocksDB支持一次获取多个K-V，还支持Key范围查找。LevelDB只能获取单个Key；
+  * RocksDB提供一些方便的工具，这些工具包含解析sst文件中的K-V记录、解析MANIFEST文件的内容等。有了这些工具，就不用再像使用LevelDB那样，只能在程序中才能知道sst文件K-V的具体信息了。
+  * RocksDB支持多线程合并，而LevelDB是单线程合并的。LSM型的数据结构，最大的性能问题就出现在其合并的时间损耗上，在多CPU的环境下，多线程合并那是LevelDB所无法比拟的。不过据其官网上的介绍，似乎多线程合并还只是针对那些与下一层没有Key重叠的文件，只是简单的rename而已，至于在真正数据上的合并方面是否也有用到多线程，就只能看代码了。
+  * RocksDB增加了合并时过滤器，对一些不再符合条件的K-V进行丢弃，如根据K-V的有效期进行过滤。
+  * 压缩方面RocksDB可采用多种压缩算法，除了LevelDB用的snappy，还有zlib、bzip2。LevelDB里面按数据的压缩率（压缩后低于75%）判断是否对数据进行压缩存储，而RocksDB典型的做法是Level 0-2不压缩，最后一层使用zlib，而其它各层采用snappy。
+  * 在故障方面，RocksDB支持增量备份和全量备份，允许将已删除的数据备份到指定的目录，供后续恢复。
+  * RocksDB支持在单个进程中启用多个实例，而LevelDB只允许单个实例。
+  * RocksDB支持管道式的Memtable，也就说允许根据需要开辟多个Memtable，以解决Put与Compact速度差异的性能瓶颈问题。在LevelDB里面因为只有一个Memtable，如果Memtable满了却还来不及持久化，这个时候LevelDB将会减缓Put操作，导致整体性能下降。
+
+
+
