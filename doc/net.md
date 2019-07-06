@@ -233,7 +233,39 @@ recv()和send()函数提供了和read和write差不多的功能.不过它们提�
 ### 非阻塞connect（）如何实现
 connect设置非阻塞，放入select，select返回时检测状态是否可读可写（要排除错误的情况）。
 
-  
+### Linux下Server处理异常关闭连接的情况
+情况 | 结果
+--- | ---
+Client忘记关闭Socket而退出、发送消息过程中以非正常方式结束进程 | 收到“104: Connection reset by peer”（ECONNRESET）
+网线出现 | 等待“超时”，收到“101：connect time out”（ETIMEOUT）断开TCP连接
+Client关闭Socket后，Server未检测到关闭的情况下发送消息 | 发送消息时产生“32: Broken pipe”（EPIPE）
+
+### Linux下Client处理异常关闭连接的情况
+情况 | 结果
+--- | ---
+网线出现 | 等待“超时”，收到“101：connect time out”（ETIMEOUT）断开TCP连接
+Server在接收缓冲区中还有未接收数据的情况下关闭了Socket | Server发送RST，Client提前收到“104: Connection reset by peer”（RST包比正常数据包先被收到）
+Server正常关闭Socket后，Client发送一个消息 | 发送成功，服务器端返回RST
+Client收到RST后继续发送消息 | 发送失败并收到“32: Broken pipe”，同时收到SIGPIPE信号（该信号默认会使进程终止）
+
+### Socket错误码errno
+errno | Berkeley对应错误码 | 意义
+--- | --- | ---
+4 | EINTR | 阻塞IO的操作被取消阻塞的调用打断。如设置了发送接收超时
+9 | EBADF | 该Socket已失效
+11 | EAGAIN | 非阻塞IO返回
+14 | EFAULT | 地址错误
+32 | EPIPE | 对关闭的Socket读写，一般在网络程序中，首先屏蔽此消息，以免发生不及时设置socket进程被杀死的情况
+35 | EWOULDBLOCK | 对非阻塞Socket进行的不能立即结束的操作返回的
+61 | ECONNREFUSED | 拒绝连接。一般发生在连接建立时
+104 | ECONNRESET | 对方关闭了连接
+110 | ETIMEOUT | 一般设置了发送接收超时，遇到网络繁忙的情况会发生
+
+
+
+
+
+
   
   
   
