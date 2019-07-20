@@ -14,6 +14,7 @@ namespace KvStoreServer{
     typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;
 
     typedef std::function<void(const std::string& message)> SendCallback;
+    typedef std::function<void(int sockfd, std::string& message)> RecvCallback;
     typedef std::function<void()> WriteCompleteCallback;
     typedef std::function<void(int sockfd)> RemoveConnectionCallback;
 

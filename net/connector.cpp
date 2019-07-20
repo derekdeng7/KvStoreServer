@@ -2,7 +2,6 @@
 #include "server.hpp"
 namespace KvStoreServer{
 
-    //server
     Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
        :socket_(new Socket(sockfd, addr)),
         channel_(nullptr),
@@ -12,35 +11,12 @@ namespace KvStoreServer{
         isMultiThread_(loop_->GetThreadNum() > 0)
     {}
 
-    //client
-    Connector::Connector(Address address, std::shared_ptr<EventLoop> loop)
-       :socket_(new Socket(-1)),
-        channel_(nullptr),
-        recvBuf_(new Buffer()),
-        sendBuf_(new Buffer()),
-        loop_(loop)
-    {
-        if(!socket_->Create())
-        {
-            throw std::runtime_error("Create() failed, error code: " + std::to_string(errno));
-        }
-
-        if(!socket_->Connect(address))
-        {
-            throw std::runtime_error("Connect() failed, error code: " + std::to_string(errno));
-        }
-
-        if(!socket_->SetNonBlock())
-        {
-            throw std::runtime_error("SetNonBlocking() failed, error code: " + std::to_string(errno));
-        }
-    }
-
     Connector::~Connector()
     {
         this->Close();
         std::cout << "Connector desctruct" << std::endl;
     }
+
 
     void Connector::Start()
     {
@@ -124,7 +100,7 @@ namespace KvStoreServer{
         }
         else if(read_size == 0)
         {
-            std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
+            //std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
             TaskInEventLoop task(removeConnectionCallback_, sockfd);
             loop_->queueInLoop(task);
         }
@@ -132,14 +108,18 @@ namespace KvStoreServer{
         {
             std::string strbuf(buf);
             recvBuf_->Append(strbuf);
-            std::cout << "[i] receive from " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
+            //std::cout << "[i] receive from " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
             
             std::string message = recvBuf_->RetriveAllAsString();
+            recvCallback_(socket_->Fd(), message);
+            Send(message);
+            /*
             if(isMultiThread_)
             {
                 TaskInSyncQueue task(std::bind(&Connector::Send, this, std::placeholders::_1), message);
                 loop_->AddTask(task);
             }
+            */
         }
     }
 
@@ -151,7 +131,7 @@ namespace KvStoreServer{
             int n = write(sockfd, sendBuf_->GetChar(), sendBuf_->DataSize());
             if(n > 0)
             {
-                std::cout << "write " << n << " bytes data again" << std::endl;
+                //std::cout << "write " << n << " bytes data again" << std::endl;
                 sendBuf_->Retrieve(n); 
                 if(sendBuf_->DataSize() == 0)
                 {

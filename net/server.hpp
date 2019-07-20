@@ -24,6 +24,7 @@ namespace KvStoreServer{
 
     private:
         void NewConnection(int sockfd, const sockaddr_in& addr);
+        bool Receive(int sockfd, std::string& message);
         void WriteComplete();
         void RemoveConnection(int sockfd);
         void ClearConnections();

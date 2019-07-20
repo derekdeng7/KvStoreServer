@@ -20,8 +20,8 @@ namespace KvStoreServer{
 
     void Server::Start()
     {
-        LSMTree* lsmTree = LSMTree::getInstance();
-        lsmTree->Start();
+        //LSMTree* lsmTree = LSMTree::getInstance();
+        //lsmTree->Start();
 
         loop_ = std::make_shared<EventLoop>(threadNum_);
         loop_->Start();
@@ -48,6 +48,9 @@ namespace KvStoreServer{
     void Server::NewConnection(int sockfd, const sockaddr_in& addr)
     {
         auto connector = std::make_shared<Connector>(sockfd, addr, loop_);
+        connector->SetRecvCallback(
+            std::bind(&Server::Receive, this, std::placeholders::_1, std::placeholders::_2)
+            );
         connector->SetRemoveConnectionCallback(
             std::bind(&Server::RemoveConnection, this, std::placeholders::_1)
         );
@@ -56,6 +59,12 @@ namespace KvStoreServer{
         );
         connector->Start();
         connections_[sockfd] = connector;
+    }
+
+    bool Server::Receive(int sockfd, std::string& message)
+    {
+      assert(sockfd > 0 && message.size());
+      return true;
     }
 
     void Server::WriteComplete()

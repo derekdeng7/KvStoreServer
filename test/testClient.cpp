@@ -4,7 +4,7 @@ using namespace KvStoreServer;
 
 int main(int argc, char *argv[])
 {
-    KvClient client("0,0,0,0", 8888);
+    Client client("127.0.0.1", 8888, 1000);
     client.Start();
     
     return 1;

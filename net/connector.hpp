@@ -16,7 +16,6 @@ namespace KvStoreServer{
     {
     public:
         Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
-        Connector(Address addr, std::shared_ptr<EventLoop> loop);
 
         ~Connector();
 
@@ -27,6 +26,11 @@ namespace KvStoreServer{
 
         void HandleRead();
         void HandleWrite();
+
+        void SetRecvCallback(RecvCallback callback)
+        {
+            recvCallback_ = callback;
+        }
 
         void SetWriteCompleteCallback(WriteCompleteCallback callback)
         {
@@ -45,6 +49,7 @@ namespace KvStoreServer{
         std::unique_ptr<Buffer> sendBuf_;
         std::shared_ptr<EventLoop> loop_;
         bool isMultiThread_;
+        RecvCallback recvCallback_;
         RemoveConnectionCallback removeConnectionCallback_;
         WriteCompleteCallback writeCompleteCallback_;
     };

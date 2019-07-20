@@ -19,7 +19,7 @@ namespace KvStoreServer{
 
     void KvClient::Start()
     {
-        client_ = std::make_shared<Client>(serverIP_, port_);
+        client_ = std::make_shared<Client>(serverIP_, port_, 1);
         thread_ = std::make_shared<std::thread>(&Client::Start, client_);
         Loop();
     }
