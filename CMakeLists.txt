@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 include_directories(
   ${PROJECT_SOURCE_DIR}/include
@@ -21,7 +21,7 @@ include_directories(
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-set(CMAKE_CXX_FLAGS "-g -Wall -pthread")
+set(CMAKE_CXX_FLAGS "-O3 -pthread")
 
 add_subdirectory(db)
 add_subdirectory(net)

@@ -10,7 +10,8 @@ namespace KvStoreServer{
       : threadNum_(threadNum),
         port_(port),
         loop_(nullptr),
-        acceptor_(nullptr)
+        acceptor_(nullptr),
+        queryNum_(0)
     {}
 
     Server::~Server()
@@ -37,9 +38,6 @@ namespace KvStoreServer{
 
     void Server::Close()
     {
-        std::cout << "acceptor_.use_count: " << acceptor_.use_count() << std::endl;
-        std::cout << "loop_.use_count: " << loop_.use_count() << std::endl;
-        
         ClearConnections();
         acceptor_->Close();
         loop_->Close();
@@ -61,15 +59,15 @@ namespace KvStoreServer{
         connections_[sockfd] = connector;
     }
 
-    bool Server::Receive(int sockfd, std::string& message)
+    void Server::Receive(int sockfd, std::string& message)
     {
-      assert(sockfd > 0 && message.size());
-      return true;
+        //std::cout << "[i] Receive the " << ++queryNum_ << "^th from client: a*" << message.size() << std::endl;
+        connections_[sockfd]->Send(message);
     }
 
     void Server::WriteComplete()
     {
-        std::cout << "[i] Writing Completed!" << std::endl;
+        //std::cout << "[i] Writing Completed!" << std::endl;
     }
 
     void Server::RemoveConnection(int sockfd)
@@ -80,7 +78,7 @@ namespace KvStoreServer{
             (iter->second)->Close();
             (iter->second).reset();
             connections_.erase(sockfd);
-            std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
+            //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
         }
     }
 

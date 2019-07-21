@@ -24,7 +24,7 @@ namespace KvStoreServer{
 
     private:
         void NewConnection(int sockfd, const sockaddr_in& addr);
-        bool Receive(int sockfd, std::string& message);
+        void Receive(int sockfd, std::string& message);
         void WriteComplete();
         void RemoveConnection(int sockfd);
         void ClearConnections();
@@ -34,6 +34,8 @@ namespace KvStoreServer{
         std::map<int, std::shared_ptr<Connector>> connections_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Acceptor> acceptor_;
+
+        size_t queryNum_;
     };
 
 }

@@ -1,5 +1,5 @@
-#ifndef _KVSTORESERVER_NET_THREADPOOL_HPP
-#define _KVSTORESERVER_NET_THREADPOOL_HPP
+#ifndef _KVSTORESERVER_THREADPOOL_HPP
+#define _KVSTORESERVER_THREADPOOL_HPP
 
 #include "syncQueue.hpp"
 #include "../db/lsmTree.hpp"
@@ -92,4 +92,4 @@ namespace KvStoreServer {
     };
 }
 
-#endif //_KVSTORESERVER_NET_THREADPOOL_HPP
+#endif //_KVSTORESERVER_THREADPOOL_HPP

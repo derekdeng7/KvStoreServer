@@ -4,7 +4,7 @@ using namespace KvStoreServer;
 
 int main(int argc, char const *argv[])
 {
-    KvServer server(5, 8888);
+    KvServer server(1, 8888);
     server.Start();
 
     return 1;

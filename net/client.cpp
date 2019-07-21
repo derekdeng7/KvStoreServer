@@ -2,10 +2,14 @@
 
 namespace KvStoreServer{
 
-    Client::Client(const char* ip, uint16_t port, int nums)
+    Client::Client(const char* ip, uint16_t port, size_t threadNum)
       : serverAddr_(ip, port),
         loop_(nullptr),
-        fdNums_(nums)
+        threadNum_(threadNum),
+        sessions_(1000),
+        finishSessions_(0),
+        maxCounts_(16384),
+        messageSize_(512)
     {}
 
     Client::~Client()
@@ -15,12 +19,12 @@ namespace KvStoreServer{
 
     void Client::Start()
     {
-        message_ = std::string(1024, 31);
+        message_ = std::string(messageSize_, 'a');
 
-        loop_ = std::make_shared<EventLoop>(1);
+        loop_ = std::make_shared<EventLoop>(threadNum_);
         loop_->Start();
         
-        for(int i = 0; i < fdNums_; i++)
+        for(size_t i = 0; i < sessions_; i++)
         {
             Socket socket;
             if(Connect(socket))
@@ -30,13 +34,14 @@ namespace KvStoreServer{
             }
         }
 
+        timer_.reset();
+
         loop_->Loop();
     }
 
     void Client::Close()
     {
-        std::cout << "loop_.use_count: " << loop_.use_count() << std::endl;
-
+         ClearConnections();
         loop_->Close();
     }
 
@@ -78,24 +83,38 @@ namespace KvStoreServer{
         connector->Start();
         connections_[sockfd] = connector;
 
-        connector->Send("hello");
+        connector->Send(message_);
     }
 
     void Client::Receive(int sockfd, std::string& message)
     {
-        if(++counts_[sockfd] >= 1000)
+        if(++counts_[sockfd] >= maxCounts_)
         {
-            RemoveConnection(sockfd);
+            //std::cout << "sockfd: " << sockfd << " finishes tasks and shutdowns" << std::endl;
+            shutdown(sockfd, SHUT_WR);
+
+            if(++finishSessions_ == sessions_)
+            {
+                double time =  static_cast<double>(timer_.elapsed_milli()) / 1000;
+                std::cout << "///////////////////////////////////////////////////////////////////////////////////" << std::endl << std::endl;
+               
+                std::cout << "[i] totally " << static_cast<size_t>(sessions_ * messageSize_ * maxCounts_ / 1048576) << " MB sent in " << time << " seconds,  " 
+                << static_cast<int>(sessions_ * maxCounts_  /  time) << " QPS"<< std::endl << std::endl;
+                
+                std::cout << "///////////////////////////////////////////////////////////////////////////////////" <<std::endl;
+
+                loop_->Close();
+            }
         }
         else
         {
-          message = message_;
+            Send(sockfd, message);
         }
     }
 
     void Client::WriteComplete()
     {
-        std::cout << "[i] Writing Completed!" << std::endl;
+       // std::cout << "[i] Writing Completed!" << std::endl;
     }
 
     void Client::RemoveConnection(int sockfd)
@@ -107,7 +126,7 @@ namespace KvStoreServer{
             (iter->second).reset();
             connections_.erase(sockfd);
             counts_.erase(sockfd);
-            std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
+            //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
         }
     }
 
@@ -122,9 +141,9 @@ namespace KvStoreServer{
         }
     }
 
-    void Client::Send(const std::string& message)
+    void Client::Send(int sockfd, const std::string& message)
     {
-        //connector_->Send(message);
+       connections_[sockfd]->Send(message);
     }
 
 }

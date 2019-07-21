@@ -4,18 +4,19 @@
 #include "socket.hpp"
 #include "connector.hpp"
 #include "declear.hpp"
+#include "../include/timer.hpp"
 
 namespace KvStoreServer{
 
     class Client
     {
     public:
-        Client(const char* ip, uint16_t port, int nums);
+        Client(const char* ip, uint16_t port, size_t threadNum);
         ~Client();
 
         void Start();
         void Close();
-        void Send(const std::string& message);
+        void Send(int sockfd, const std::string& message);
 
     private:
         bool Connect(Socket& socket);
@@ -27,10 +28,18 @@ namespace KvStoreServer{
 
         Address serverAddr_;
         std::shared_ptr<EventLoop> loop_;
-        int fdNums_;
+        size_t threadNum_;
+
         std::map<int, std::shared_ptr<Connector>> connections_;
-        std::map<int, int> counts_;
+    
+        std::map<int, size_t> counts_;
         std::string message_;
+
+        Timer timer_;
+        size_t sessions_;
+        size_t finishSessions_;
+        size_t maxCounts_;
+        size_t messageSize_;
     };
 }
 

@@ -53,7 +53,7 @@ namespace KvStoreServer{
 
             if(CheckCommand())
             {
-                client_->Send(command);
+                //client_->Send(command);
             }
         }
     }

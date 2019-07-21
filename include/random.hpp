@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#ifndef _KVSTORESERVER_DB_RANDOM_HPP_
-#define _KVSTORESERVER_DB_RANDOM_HPP_
+#ifndef _KVSTORESERVER_RANDOM_HPP_
+#define _KVSTORESERVER_RANDOM_HPP_
 
 #include <stdint.h>
 
@@ -61,4 +61,4 @@ class Random {
 
 } 
 
-#endif  //_KVSTORESERVER_DB_RANDOM_HPP_
+#endif  //_KVSTORESERVER_RANDOM_HPP_

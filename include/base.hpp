@@ -1,5 +1,5 @@
-#ifndef _KVSTORESERVER_DB_BASE_HPP_
-#define _KVSTORESERVER_DB_BASE_HPP_
+#ifndef _KVSTORESERVER_BASE_HPP_
+#define _KVSTORESERVER_BASE_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -10,10 +10,10 @@
 
 namespace KvStoreServer{
 
-    const int MAXEVENTNUM = 1024;
-    const int MAXFDNUM = 1024;
-    const int BUFSIZE = 1024;
-    const int MESSAGESIZE = 1024;
+    const int MAXEVENTNUM = 16384;
+    const int MAXFDNUM = 16384;
+    const int BUFSIZE = 16384;
+    const int MESSAGESIZE = 16384;
 
     constexpr auto MANIFESTPATH = ".Manifest";
     constexpr auto LOGMETAPATH = ".LogMeta";
@@ -186,4 +186,4 @@ namespace KvStoreServer{
 
 }
 
-#endif //_KVSTORESERVER_DB_BASE_HPP_
+#endif //_KVSTORESERVER_BASE_HPP_

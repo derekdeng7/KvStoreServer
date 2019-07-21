@@ -14,7 +14,7 @@ namespace KvStoreServer{
     Connector::~Connector()
     {
         this->Close();
-        std::cout << "Connector desctruct" << std::endl;
+        //std::cout << "Connector desctruct" << std::endl;
     }
 
 
@@ -53,7 +53,7 @@ namespace KvStoreServer{
         int n = 0;
         if(sendBuf_->DataSize() == 0)
         {
-            std::cout << "[i] send: '" << message << "'" << std::endl;
+            //std::cout << "[i] send: '" << message << "'" << std::endl;
             n = write(socket_->Fd(), message.c_str(), message.size());
             if(n < 0)
             {
@@ -101,6 +101,7 @@ namespace KvStoreServer{
         else if(read_size == 0)
         {
             //std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
+            shutdown(socket_->Fd(), SHUT_WR);
             TaskInEventLoop task(removeConnectionCallback_, sockfd);
             loop_->queueInLoop(task);
         }
@@ -112,7 +113,6 @@ namespace KvStoreServer{
             
             std::string message = recvBuf_->RetriveAllAsString();
             recvCallback_(socket_->Fd(), message);
-            Send(message);
             /*
             if(isMultiThread_)
             {
