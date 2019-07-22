@@ -3,18 +3,16 @@
 
 namespace KvStoreServer{
 
-    Channel::Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
+    Channel::Channel(int sockfd, std::shared_ptr<EventLoop> loop)
        :sockfd_(sockfd),
         event_(0),
         revent_(0),
-        addr_(addr),
         loop_(loop)
     {}
 
     Channel::~Channel()
     {
         RemoveChannel();
-        close(sockfd_);
     }
 
     void Channel::AddChannel()

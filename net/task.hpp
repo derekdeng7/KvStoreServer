@@ -31,37 +31,6 @@ namespace KvStoreServer{
         std::string message_;
     };
 
-
-    class TaskInEventLoop : public Task
-    {
-    public:
-        TaskInEventLoop(RemoveConnectionCallback callback, int sockfd)
-          : Task(),
-            removeConnectionCallback_(callback),
-            sockfd_(sockfd)
-        {}
-
-        TaskInEventLoop(SendCallback callback, std::string message)
-          : Task(callback, message)
-        {}
-
-        void virtual processTask()
-        {
-            if(sendCallback_)
-            {
-                sendCallback_(message_);
-            }
-            else if(removeConnectionCallback_)
-            {
-                removeConnectionCallback_(sockfd_);
-            }
-        }
-
-    private:
-        RemoveConnectionCallback removeConnectionCallback_;
-        int sockfd_;
-    };
-
     class TaskInSyncQueue : public Task
     {
     public:

@@ -28,8 +28,8 @@ namespace KvStoreServer{
         void AddChannel(Channel* channel);
         void RemoveChannel(Channel* channel);
         void Updatechannel(Channel* channel);
-        void queueInLoop(TaskInEventLoop& task);
-        void runInLoop(TaskInEventLoop& task);
+        void queueInLoop(EventCallback cb);
+        void runInLoop(EventCallback cb);
         bool isInLoopThread();
         void HandleRead();  
         void AddTask(const TaskInSyncQueue& task);
@@ -49,7 +49,7 @@ namespace KvStoreServer{
         std::unique_ptr<Epoll> epoller_;
         std::mutex mutex_;
         std::unique_ptr<Channel> wakeupfdChannel_;
-        std::vector<TaskInEventLoop> pendingFunctors_;
+        std::vector<EventCallback> pendingFunctors_;
     };
 
 }

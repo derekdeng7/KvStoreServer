@@ -2,6 +2,7 @@
 #define _KVSTORESERVER_CALLBACK_HPP
 
 #include "base.hpp"
+#include "../net/declear.hpp"
 
 #include <arpa/inet.h>
 #include <functional>
@@ -11,7 +12,7 @@
 namespace KvStoreServer{
 
     typedef std::function<void()> EventCallback;
-    typedef std::function<void(int sockfd, const sockaddr_in& addr)> NewConnectionCallback;
+    typedef std::function<void(std::shared_ptr<Socket> socket)> NewConnectionCallback;
 
     typedef std::function<void(const std::string& message)> SendCallback;
     typedef std::function<void(int sockfd, std::string& message)> RecvCallback;

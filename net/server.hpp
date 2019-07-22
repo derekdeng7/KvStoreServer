@@ -23,10 +23,11 @@ namespace KvStoreServer{
         void Close();
 
     private:
-        void NewConnection(int sockfd, const sockaddr_in& addr);
+        void NewConnection(std::shared_ptr<Socket> socket);
         void Receive(int sockfd, std::string& message);
         void WriteComplete();
         void RemoveConnection(int sockfd);
+        void RemoveConnectionInLoop(int sockfd);
         void ClearConnections();
 
         size_t threadNum_;
@@ -34,8 +35,6 @@ namespace KvStoreServer{
         std::map<int, std::shared_ptr<Connector>> connections_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Acceptor> acceptor_;
-
-        size_t queryNum_;
     };
 
 }

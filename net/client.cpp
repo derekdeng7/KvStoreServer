@@ -26,15 +26,20 @@ namespace KvStoreServer{
         
         for(size_t i = 0; i < sessions_; i++)
         {
-            Socket socket;
+            std::shared_ptr<Socket> socket(new Socket());
             if(Connect(socket))
             {
-              NewConnection(socket.Fd(), socket.ServerAddr());
-              counts_[socket.Fd()] = 0;
+              NewConnection(socket);
+              counts_[socket->Fd()] = 0;
             }
         }
 
         timer_.reset();
+
+         for(auto iter : connections_)
+        {
+            Send(iter.first, message_);
+        }
 
         loop_->Loop();
     }
@@ -45,32 +50,32 @@ namespace KvStoreServer{
         loop_->Close();
     }
 
-    bool Client::Connect(Socket& socket)
+    bool Client::Connect(std::shared_ptr<Socket> socket)
     {
-        if(!socket.Create())
+        if(!socket->Create())
         {
-          std::cout << "Create() failed, error code: " + std::to_string(errno) << std::endl;
-          return false;
+            std::cout << "Create() failed, error code: " + std::to_string(errno) << std::endl;
+            return false;
         }
 
-        if(!socket.Connect(serverAddr_))
+        if(!socket->Connect(serverAddr_))
         {
-          std::cout << "Connect() failed, error code: " + std::to_string(errno) << std::endl;
-          return false;
+            std::cout << "Connect() failed, error code: " + std::to_string(errno) << std::endl;
+            return false;
         }
 
-        if(!socket.SetNonBlock())
+        if(!socket->SetNonBlock())
         {
-          std::cout << "SetNonBlocking() failed, error code: " + std::to_string(errno) << std::endl;
-          return false;
+            std::cout << "SetNonBlocking() failed, error code: " + std::to_string(errno) << std::endl;
+            return false;
         }
 
         return true;
     }
 
-    void Client::NewConnection(int sockfd, const sockaddr_in& addr)
+    void Client::NewConnection(std::shared_ptr<Socket> socket)
     {
-        auto connector = std::make_shared<Connector>(sockfd, addr, loop_);
+        auto connector = std::make_shared<Connector>(socket, loop_);
         connector->SetRecvCallback(
             std::bind(&Client::Receive, this, std::placeholders::_1, std::placeholders::_2)
             );
@@ -81,9 +86,9 @@ namespace KvStoreServer{
             std::bind(&Client::WriteComplete, this)
             );
         connector->Start();
-        connections_[sockfd] = connector;
+        connections_[socket->Fd()] = connector;
 
-        connector->Send(message_);
+        //connector->Send(message_);
     }
 
     void Client::Receive(int sockfd, std::string& message)
@@ -119,11 +124,17 @@ namespace KvStoreServer{
 
     void Client::RemoveConnection(int sockfd)
     {
+        void (Client::*fp)(int sockfd) = &Client::RemoveConnectionInLoop;
+        loop_->queueInLoop(std::bind(fp, this, sockfd));
+    }
+
+    void Client::RemoveConnectionInLoop(int sockfd)
+    {
         auto iter = connections_.find(sockfd);
         if(iter != connections_.end())
         {
             (iter->second)->Close();
-            (iter->second).reset();
+            //(iter->second).reset();
             connections_.erase(sockfd);
             counts_.erase(sockfd);
             //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;

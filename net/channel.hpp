@@ -13,7 +13,7 @@ namespace KvStoreServer{
     class Channel
     {
     public:
-        Channel(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
+        Channel(int sockfd, std::shared_ptr<EventLoop> loop);
         ~Channel();
 
         void AddChannel();
@@ -38,7 +38,6 @@ namespace KvStoreServer{
         int sockfd_;
         int event_;
         int revent_;
-        sockaddr_in addr_;
         EventCallback readCallback_;
         EventCallback writeCallback_;
         std::shared_ptr<EventLoop> loop_;

@@ -19,11 +19,12 @@ namespace KvStoreServer{
         void Send(int sockfd, const std::string& message);
 
     private:
-        bool Connect(Socket& socket);
+        bool Connect(std::shared_ptr<Socket> socket);
         void Receive(int sockfd, std::string& message);
-        void NewConnection(int sockfd, const sockaddr_in& addr);
+        void NewConnection(std::shared_ptr<Socket> socket);
         void WriteComplete();
         void RemoveConnection(int sockfd);
+        void RemoveConnectionInLoop(int sockfd);
         void ClearConnections();
 
         Address serverAddr_;

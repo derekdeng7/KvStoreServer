@@ -2,8 +2,8 @@
 #include "server.hpp"
 namespace KvStoreServer{
 
-    Connector::Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop)
-       :socket_(new Socket(sockfd, addr)),
+    Connector::Connector(std::shared_ptr<Socket> socket, std::shared_ptr<EventLoop> loop)
+       :socket_(socket),
         channel_(nullptr),
         recvBuf_(new Buffer()),
         sendBuf_(new Buffer()),
@@ -20,7 +20,7 @@ namespace KvStoreServer{
 
     void Connector::Start()
     {
-        channel_.reset(new Channel(socket_->Fd(), socket_->ServerAddr(), loop_));
+        channel_.reset(new Channel(socket_->Fd(), loop_));
         channel_->SetReadCallback(
             std::bind(&Connector::HandleRead, this)
         );
@@ -43,8 +43,8 @@ namespace KvStoreServer{
         }
         else
         {
-            TaskInEventLoop task(std::bind(&Connector::SendInLoop, shared_from_this(), std::placeholders::_1), message);
-            loop_->runInLoop(task);
+            void (Connector::*fp)(const std::string& message) = &Connector::SendInLoop;
+            loop_->runInLoop(std::bind(fp, shared_from_this(), message));
         }
     }
 
@@ -58,13 +58,14 @@ namespace KvStoreServer{
             if(n < 0)
             {
                 std::cout << "[!] Connector::Send() write error" << std::endl;
+                channel_->EnableWriting();
+                return;
             }
 
             if(n == static_cast<int>(message.size()))
             {
                 writeCompleteCallback_();
             }
-                
         }
 
         if(n < static_cast<int>(message.size()))
@@ -74,6 +75,26 @@ namespace KvStoreServer{
                 channel_->EnableWriting();
             }
         }
+    }
+
+    void Connector::Shutdown()
+    {
+        loop_->runInLoop(std::bind(&Connector::ShutdownInLoop, shared_from_this()));
+    }
+
+    void Connector::ShutdownInLoop()
+    {
+        socket_->ShutdownWrite();
+    }
+    
+    void Connector::ForceClose()
+    {
+        loop_->queueInLoop(std::bind(&Connector::ForceCloseInLoop, shared_from_this()));
+    }
+
+    void Connector::ForceCloseInLoop()
+    {
+        HandleClose();
     }
 
     void Connector::HandleRead()
@@ -101,9 +122,7 @@ namespace KvStoreServer{
         else if(read_size == 0)
         {
             //std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
-            shutdown(socket_->Fd(), SHUT_WR);
-            TaskInEventLoop task(removeConnectionCallback_, sockfd);
-            loop_->queueInLoop(task);
+           HandleClose();
         }
         else
         {
@@ -139,6 +158,11 @@ namespace KvStoreServer{
                 }
             }
         }
+    }
+
+    void Connector::HandleClose()
+    {
+        removeConnectionCallback_(channel_->GetSockfd());
     }
 
 }

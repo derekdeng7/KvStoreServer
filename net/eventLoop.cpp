@@ -25,7 +25,7 @@ namespace KvStoreServer{
     {
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
-        wakeupfdChannel_.reset(new Channel(eventfd_, addr, shared_from_this()));
+        wakeupfdChannel_.reset(new Channel(eventfd_, shared_from_this()));
         wakeupfdChannel_->SetReadCallback(
             std::bind(&EventLoop::HandleRead, this)
         );
@@ -78,11 +78,11 @@ namespace KvStoreServer{
         epoller_->UpdateChannel(channel);
     }
 
-    void EventLoop::queueInLoop(TaskInEventLoop& task)
+    void EventLoop::queueInLoop(EventCallback cb)
     {
         {
             std::unique_lock<std::mutex> locker(mutex_);
-            pendingFunctors_.push_back(task);
+            pendingFunctors_.push_back(std::move(cb));
         }
         
         if(!isInLoopThread() || callingPendingFunctors_)
@@ -91,15 +91,15 @@ namespace KvStoreServer{
         }     
     }
 
-    void EventLoop::runInLoop(TaskInEventLoop& task)
+    void EventLoop::runInLoop(EventCallback cb)
     {
         if(isInLoopThread())
         {
-            task.processTask();
+            cb();
         }
         else
         {
-            queueInLoop(task);
+            queueInLoop(std::move(cb));
         }
     }
 
@@ -150,7 +150,7 @@ namespace KvStoreServer{
 
     void EventLoop::DoPendingFunctors()
     {
-        std::vector<TaskInEventLoop> tempVec;
+        std::vector<EventCallback> tempVec;
         callingPendingFunctors_ = true;
 
         {
@@ -160,7 +160,7 @@ namespace KvStoreServer{
         
         for(auto it = tempVec.begin(); it != tempVec.end(); it++)
         {
-            (*it).processTask();
+            (*it)();
         }
         callingPendingFunctors_ = false;
     }

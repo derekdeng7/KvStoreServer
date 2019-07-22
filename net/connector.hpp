@@ -15,7 +15,7 @@ namespace KvStoreServer{
     class Connector : public std::enable_shared_from_this<Connector>
     {
     public:
-        Connector(int sockfd, sockaddr_in addr, std::shared_ptr<EventLoop> loop);
+        Connector(std::shared_ptr<Socket> socket_, std::shared_ptr<EventLoop> loop);
 
         ~Connector();
 
@@ -24,8 +24,15 @@ namespace KvStoreServer{
         void Send(const std::string& message);
         void SendInLoop(const std::string& message);
 
+        void Shutdown();
+        void ShutdownInLoop();
+
+        void ForceClose();
+        void ForceCloseInLoop();
+
         void HandleRead();
         void HandleWrite();
+        void HandleClose();
 
         void SetRecvCallback(RecvCallback callback)
         {
@@ -43,7 +50,7 @@ namespace KvStoreServer{
         }
 
     private:
-        std::unique_ptr<Socket> socket_;
+        std::shared_ptr<Socket> socket_;
         std::unique_ptr<Channel> channel_;    
         std::unique_ptr<Buffer> recvBuf_;
         std::unique_ptr<Buffer> sendBuf_;

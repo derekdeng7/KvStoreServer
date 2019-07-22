@@ -15,10 +15,11 @@ namespace KvStoreServer{
     public:
         Socket();
         Socket(int fd);
-        Socket(int fd, sockaddr_in addr);
+        ~Socket();
 
         int Fd() const;
-        sockaddr_in ServerAddr() const;
+        void SetServerAddr(const sockaddr_in& addr);
+        sockaddr_in GetServerAddr() const;
         bool Valid() const;
 
         bool Create();
@@ -27,6 +28,8 @@ namespace KvStoreServer{
         bool Listen();
         int Accept();
         bool Close();
+        bool ShutdownWrite();
+        bool ShutdownRead();
 
         bool SetOption(int value, int optval);
         bool GetOption(int value, int* optval);

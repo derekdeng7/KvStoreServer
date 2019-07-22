@@ -19,7 +19,7 @@ namespace KvStoreServer{
     {
         listenfd_ = InitListenfd();
 
-        acceptChannel_.reset(new Channel(listenfd_, socket_->ServerAddr(), loop_));
+        acceptChannel_.reset(new Channel(listenfd_, loop_));
         acceptChannel_->SetReadCallback(
             std::bind(&Acceptor::HandleRead, this)
         );
@@ -61,7 +61,8 @@ namespace KvStoreServer{
 
         if(newConnectionCallback_)
         {
-            newConnectionCallback_(connfd, cliaddr);
+            std::shared_ptr<Socket> socket(new Socket(connfd));
+            newConnectionCallback_(socket);
         }
         else
         {

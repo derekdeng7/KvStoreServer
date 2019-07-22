@@ -9,17 +9,26 @@ namespace KvStoreServer{
     Socket::Socket(int fd)
       : fd_(fd)
     {}
-        
-    Socket::Socket(int fd, sockaddr_in addr)
-      : fd_(fd), addr_(addr)
-    {}
+
+    Socket::~Socket()
+    {
+        if(Valid())
+        {
+            close(fd_);
+        }
+    }
 
     int Socket::Fd() const
     {
         return fd_;
     }
 
-    sockaddr_in Socket::ServerAddr() const
+    void Socket::SetServerAddr(const sockaddr_in& addr)
+    {
+        addr_ = addr;
+    }
+
+    sockaddr_in Socket::GetServerAddr() const
     {
         return addr_;
     }
@@ -80,6 +89,16 @@ namespace KvStoreServer{
             fd_ = -1;
         }
         return flag;
+    }
+
+    bool Socket::ShutdownWrite()
+    {
+        return shutdown(fd_, SHUT_WR) == 0;
+    }
+
+    bool Socket::ShutdownRead()
+    {
+        return shutdown(fd_, SHUT_RD) == 0;
     }
 
     bool Socket::SetOption(int optname, int optval)

@@ -10,8 +10,7 @@ namespace KvStoreServer{
       : threadNum_(threadNum),
         port_(port),
         loop_(nullptr),
-        acceptor_(nullptr),
-        queryNum_(0)
+        acceptor_(nullptr)
     {}
 
     Server::~Server()
@@ -29,7 +28,7 @@ namespace KvStoreServer{
 
         acceptor_ = std::make_shared<Acceptor>(loop_, port_); 
         acceptor_->SetNewConnectionCallback(
-            std::bind(&Server::NewConnection, this, std::placeholders::_1, std::placeholders::_2)
+            std::bind(&Server::NewConnection, this, std::placeholders::_1)
         );
         acceptor_->Start();
 
@@ -43,9 +42,9 @@ namespace KvStoreServer{
         loop_->Close();
     }
 
-    void Server::NewConnection(int sockfd, const sockaddr_in& addr)
+    void Server::NewConnection(std::shared_ptr<Socket> socket)
     {
-        auto connector = std::make_shared<Connector>(sockfd, addr, loop_);
+        auto connector = std::make_shared<Connector>(socket, loop_);
         connector->SetRecvCallback(
             std::bind(&Server::Receive, this, std::placeholders::_1, std::placeholders::_2)
             );
@@ -56,12 +55,11 @@ namespace KvStoreServer{
             std::bind(&Server::WriteComplete, this)
         );
         connector->Start();
-        connections_[sockfd] = connector;
+        connections_[socket->Fd()] = connector;
     }
 
     void Server::Receive(int sockfd, std::string& message)
     {
-        //std::cout << "[i] Receive the " << ++queryNum_ << "^th from client: a*" << message.size() << std::endl;
         connections_[sockfd]->Send(message);
     }
 
@@ -72,11 +70,17 @@ namespace KvStoreServer{
 
     void Server::RemoveConnection(int sockfd)
     {
+        void (Server::*fp)(int sockfd) = &Server::RemoveConnectionInLoop;
+        loop_->queueInLoop(std::bind(fp, this, sockfd));
+    }
+
+    void Server::RemoveConnectionInLoop(int sockfd)
+    {
         auto iter = connections_.find(sockfd);
         if(iter != connections_.end())
         {
             (iter->second)->Close();
-            (iter->second).reset();
+            //(iter->second).reset();
             connections_.erase(sockfd);
             //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
         }
