@@ -1,7 +1,11 @@
 #include <functional>
 
-#include "server.hpp"
+#include "acceptor.hpp"
+#include "connector.hpp"
 #include "epoll.hpp"
+#include "eventLoop.hpp"
+#include "server.hpp"
+#include "socket.hpp"
 #include "../db/lsmTree.hpp"
 
 namespace KvStoreServer{
@@ -58,7 +62,7 @@ namespace KvStoreServer{
         connections_[socket->Fd()] = connector;
     }
 
-    void Server::Receive(int sockfd, std::string& message)
+    void Server::Receive(int sockfd, const std::string& message)
     {
         connections_[sockfd]->Send(message);
     }
@@ -71,7 +75,7 @@ namespace KvStoreServer{
     void Server::RemoveConnection(int sockfd)
     {
         void (Server::*fp)(int sockfd) = &Server::RemoveConnectionInLoop;
-        loop_->queueInLoop(std::bind(fp, this, sockfd));
+        loop_->QueueInLoop(std::bind(fp, this, sockfd));
     }
 
     void Server::RemoveConnectionInLoop(int sockfd)

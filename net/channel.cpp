@@ -1,10 +1,11 @@
 #include "channel.hpp"
+#include "eventLoop.hpp"
 #include "unistd.h"
 
 namespace KvStoreServer{
 
-    Channel::Channel(int sockfd, std::shared_ptr<EventLoop> loop)
-       :sockfd_(sockfd),
+    Channel::Channel(int fd, std::shared_ptr<EventLoop> loop)
+       :fd_(fd),
         event_(0),
         revent_(0),
         loop_(loop)
@@ -90,9 +91,9 @@ namespace KvStoreServer{
         return event_;
     }
 
-    int Channel::GetSockfd() const
+    int Channel::GetFd() const
     {
-        return sockfd_;
+        return fd_;
     }
 
     void Channel::SetReadCallback(EventCallback callback)

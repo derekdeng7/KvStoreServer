@@ -3,7 +3,6 @@
 
 #include "../include/callback.hpp"
 #include "declear.hpp"
-#include "eventLoop.hpp"
 
 #include <sys/epoll.h>
 #include <iostream>
@@ -13,7 +12,7 @@ namespace KvStoreServer{
     class Channel
     {
     public:
-        Channel(int sockfd, std::shared_ptr<EventLoop> loop);
+        Channel(int fd, std::shared_ptr<EventLoop> loop);
         ~Channel();
 
         void AddChannel();
@@ -29,13 +28,13 @@ namespace KvStoreServer{
         void DisableAll();
         bool IsWriting() const;
         int GetEvents() const;
-        int GetSockfd() const;
+        int GetFd() const;
 
         void SetReadCallback(EventCallback callback);
         void SetWriteCallback(EventCallback callback);
 
     private:        
-        int sockfd_;
+        int fd_;
         int event_;
         int revent_;
         EventCallback readCallback_;

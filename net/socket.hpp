@@ -1,7 +1,6 @@
 #ifndef _KVSTORESERVER_NET_SOCKET_HPP_
 #define _KVSTORESERVER_NET_SOCKET_HPP_
 
-#include "address.hpp"
 #include "declear.hpp"
 
 #include <string.h>

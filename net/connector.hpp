@@ -51,7 +51,7 @@ namespace KvStoreServer{
 
     private:
         std::shared_ptr<Socket> socket_;
-        std::unique_ptr<Channel> channel_;    
+        std::unique_ptr<Channel> connChannel_;    
         std::unique_ptr<Buffer> recvBuf_;
         std::unique_ptr<Buffer> sendBuf_;
         std::shared_ptr<EventLoop> loop_;

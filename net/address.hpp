@@ -1,6 +1,8 @@
 #ifndef _KVSTORESERVER_NET_ADDRESS_HPP_
 #define _KVSTORESERVER_NET_ADDRESS_HPP_
 
+#include "declear.hpp"
+
 #include <string>
 #include <cassert>
 #include <arpa/inet.h>
@@ -10,7 +12,7 @@ namespace KvStoreServer{
     class Address
     {
     public:
-        Address(uint16_t port, uint32_t ip) : port_(port), ip_(ip) 
+        Address(uint16_t port = 0, uint32_t ip = 0) : port_(port), ip_(ip) 
         {}
 
         Address(const char* ip, uint16_t port) : port_(port)

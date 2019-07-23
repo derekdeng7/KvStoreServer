@@ -1,10 +1,14 @@
+#include "channel.hpp"
 #include "connector.hpp"
+#include "epoll.hpp"
 #include "server.hpp"
+#include "socket.hpp"
+
 namespace KvStoreServer{
 
     Connector::Connector(std::shared_ptr<Socket> socket, std::shared_ptr<EventLoop> loop)
        :socket_(socket),
-        channel_(nullptr),
+        connChannel_(nullptr),
         recvBuf_(new Buffer()),
         sendBuf_(new Buffer()),
         loop_(loop),
@@ -20,31 +24,31 @@ namespace KvStoreServer{
 
     void Connector::Start()
     {
-        channel_.reset(new Channel(socket_->Fd(), loop_));
-        channel_->SetReadCallback(
+        connChannel_.reset(new Channel(socket_->Fd(), loop_));
+        connChannel_->SetReadCallback(
             std::bind(&Connector::HandleRead, this)
         );
-        channel_->SetWriteCallback(
+        connChannel_->SetWriteCallback(
             std::bind(&Connector::HandleWrite, this)
         );
-        channel_->AddChannel();
+        connChannel_->AddChannel();
     }
 
     void Connector::Close()
     {
-        channel_->RemoveChannel();
+        connChannel_->RemoveChannel();
     }
 
     void Connector::Send(const std::string& message)
     {
-        if(loop_->isInLoopThread())
+        if(loop_->IsInLoopThread())
         {
             SendInLoop(message);
         }
         else
         {
             void (Connector::*fp)(const std::string& message) = &Connector::SendInLoop;
-            loop_->runInLoop(std::bind(fp, shared_from_this(), message));
+            loop_->RunInLoop(std::bind(fp, shared_from_this(), message));
         }
     }
 
@@ -58,7 +62,7 @@ namespace KvStoreServer{
             if(n < 0)
             {
                 std::cout << "[!] Connector::Send() write error" << std::endl;
-                channel_->EnableWriting();
+                connChannel_->EnableWriting();
                 return;
             }
 
@@ -72,14 +76,14 @@ namespace KvStoreServer{
         {
             sendBuf_->Append(message.substr(n, message.size()));
             {
-                channel_->EnableWriting();
+                connChannel_->EnableWriting();
             }
         }
     }
 
     void Connector::Shutdown()
     {
-        loop_->runInLoop(std::bind(&Connector::ShutdownInLoop, shared_from_this()));
+        loop_->RunInLoop(std::bind(&Connector::ShutdownInLoop, shared_from_this()));
     }
 
     void Connector::ShutdownInLoop()
@@ -89,7 +93,7 @@ namespace KvStoreServer{
     
     void Connector::ForceClose()
     {
-        loop_->queueInLoop(std::bind(&Connector::ForceCloseInLoop, shared_from_this()));
+        loop_->QueueInLoop(std::bind(&Connector::ForceCloseInLoop, shared_from_this()));
     }
 
     void Connector::ForceCloseInLoop()
@@ -99,7 +103,7 @@ namespace KvStoreServer{
 
     void Connector::HandleRead()
     {
-        int sockfd = channel_->GetSockfd();
+        int sockfd = connChannel_->GetFd();
         int read_size;
         char buf[BUFSIZE];
 
@@ -144,8 +148,8 @@ namespace KvStoreServer{
 
     void Connector::HandleWrite()
     {
-        int sockfd = channel_->GetSockfd();
-        if(channel_->IsWriting())
+        int sockfd = connChannel_->GetFd();
+        if(connChannel_->IsWriting())
         {
             int n = write(sockfd, sendBuf_->GetChar(), sendBuf_->DataSize());
             if(n > 0)
@@ -154,7 +158,7 @@ namespace KvStoreServer{
                 sendBuf_->Retrieve(n); 
                 if(sendBuf_->DataSize() == 0)
                 {
-                    channel_->DisableWriting();
+                    connChannel_->DisableWriting();
                 }
             }
         }
@@ -162,7 +166,7 @@ namespace KvStoreServer{
 
     void Connector::HandleClose()
     {
-        removeConnectionCallback_(channel_->GetSockfd());
+        removeConnectionCallback_(connChannel_->GetFd());
     }
 
 }

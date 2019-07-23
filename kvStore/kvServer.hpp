@@ -3,6 +3,9 @@
 
 #include "../net/server.hpp"
 
+#include <vector>
+#include <thread>
+
 namespace KvStoreServer{
 
     class KvServer

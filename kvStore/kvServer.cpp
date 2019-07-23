@@ -1,5 +1,7 @@
 #include "kvServer.hpp"
 
+#include <iostream>
+#include <sstream>
 
 namespace KvStoreServer{
 
@@ -44,7 +46,6 @@ namespace KvStoreServer{
             {
                 exit(0);
             }
-
         }
     }
 }

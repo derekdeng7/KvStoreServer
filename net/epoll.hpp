@@ -1,7 +1,6 @@
 #ifndef _KVSTORESERVER_NET_EPOLL_HPP_
 #define _KVSTORESERVER_NET_EPOLL_HPP_
 
-#include "channel.hpp"
 #include "declear.hpp"
 #include "../include/base.hpp"
 

@@ -1,4 +1,9 @@
+#include "channel.hpp"
+#include "epoll.hpp"
 #include "eventLoop.hpp"
+#include "task.hpp"
+#include "timerQueue.hpp"
+#include "timeStamp.hpp"
 #include "memory.h"
 
 #include <unistd.h>
@@ -12,6 +17,7 @@ namespace KvStoreServer{
         threadNum_(threadNum),
         threadPool_(nullptr),
         epoller_(new Epoll()),
+        timerQueue_(nullptr),
         wakeupfdChannel_(nullptr)
     {}
     
@@ -33,15 +39,16 @@ namespace KvStoreServer{
 
         threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>(threadNum_);
         threadPool_->Start();
+
+        timerQueue_.reset(new TimerQueue(shared_from_this()));
     }
 
     void EventLoop::Close()
     {
-        std::cout << "threadPool_.use_count: " << threadPool_.use_count() << std::endl;
         threadPool_->Stop();
 
         quit_ = true;
-        if(!isInLoopThread())
+        if(!IsInLoopThread())
         {
             WakeUp();
         }
@@ -63,6 +70,46 @@ namespace KvStoreServer{
         }
     }
 
+    void EventLoop::QueueInLoop(EventCallback cb)
+    {
+        {
+            std::unique_lock<std::mutex> locker(mutex_);
+            pendingFunctors_.push_back(std::move(cb));
+        }
+        
+        if(!IsInLoopThread() || callingPendingFunctors_)
+        {
+            WakeUp();
+        }     
+    }
+
+    void EventLoop::RunInLoop(EventCallback cb)
+    {
+        if(IsInLoopThread())
+        {
+            cb();
+        }
+        else
+        {
+            QueueInLoop(std::move(cb));
+        }
+    }
+
+    bool EventLoop::IsInLoopThread()
+    {
+        return threadid_ == std::hash<std::thread::id>{}(std::this_thread::get_id());
+    }
+
+    void EventLoop::WakeUp()
+    {
+        uint64_t one = 1;
+        ssize_t n = write(eventfd_, &one, sizeof(one));
+        if(n != sizeof(one))
+        {
+            std::cout << "EventLoop::WakeUp() writes " << n << " bytes instead of 8" << std::endl;
+        }
+    }
+
     void EventLoop::AddChannel(Channel* channel)
     {
         epoller_->AddChannel(channel);
@@ -78,44 +125,26 @@ namespace KvStoreServer{
         epoller_->UpdateChannel(channel);
     }
 
-    void EventLoop::queueInLoop(EventCallback cb)
+    TimerId EventLoop::RunAt(TimeStamp time, TimerCallback cb)
     {
-        {
-            std::unique_lock<std::mutex> locker(mutex_);
-            pendingFunctors_.push_back(std::move(cb));
-        }
-        
-        if(!isInLoopThread() || callingPendingFunctors_)
-        {
-            WakeUp();
-        }     
+        return timerQueue_->AddTimer(std::move(cb), time, 0.0);
     }
 
-    void EventLoop::runInLoop(EventCallback cb)
+    TimerId EventLoop::RunAfter(double delay, TimerCallback cb)
     {
-        if(isInLoopThread())
-        {
-            cb();
-        }
-        else
-        {
-            queueInLoop(std::move(cb));
-        }
+        TimeStamp time(TimeStamp::NowAfter(delay));
+        return RunAt(std::move(time), std::move(cb));
     }
 
-    bool EventLoop::isInLoopThread()
+    TimerId EventLoop::RunEvery(double interval, TimerCallback cb)
     {
-        return threadid_ == std::hash<std::thread::id>{}(std::this_thread::get_id());
+        TimeStamp time(TimeStamp::NowAfter(interval));
+        return timerQueue_->AddTimer(std::move(cb), std::move(time), interval);
     }
 
-    void EventLoop::HandleRead()
+    void EventLoop::CancelTimer(TimerId timerId)
     {
-        uint64_t one = 1;
-        ssize_t n = write(eventfd_, &one, sizeof(one));
-        if(n != sizeof(one))
-        {
-            std::cout << "EventLoop::HandleReading() reads " << n << " bytes instead of 8" << std::endl;
-        } 
+        return timerQueue_->CancelTimer(timerId);
     }
 
     void EventLoop::AddTask(const TaskInSyncQueue& task)
@@ -128,14 +157,14 @@ namespace KvStoreServer{
         return threadNum_;
     }
 
-    void EventLoop::WakeUp()
+    void EventLoop::HandleRead()
     {
         uint64_t one = 1;
         ssize_t n = write(eventfd_, &one, sizeof(one));
         if(n != sizeof(one))
         {
-            std::cout << "EventLoop::WakeUp() writes " << n << " bytes instead of 8" << std::endl;
-        }
+            std::cout << "EventLoop::HandleReading() reads " << n << " bytes instead of 8" << std::endl;
+        } 
     }
 
     int EventLoop::CreateEventfd()

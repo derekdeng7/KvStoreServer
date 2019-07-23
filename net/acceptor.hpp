@@ -3,8 +3,6 @@
 
 #include "../include/callback.hpp"
 #include "declear.hpp"
-#include "eventLoop.hpp"
-#include "socket.hpp"
 
 #include <arpa/inet.h>
 #include <fcntl.h>

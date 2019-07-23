@@ -1,10 +1,7 @@
 #ifndef _KVSTORESERVER_NET_SERVER_HPP_
 #define _KVSTORESERVER_NET_SERVER_HPP_
 
-#include "acceptor.hpp"
-#include "connector.hpp"
 #include "declear.hpp"
-#include "eventLoop.hpp"
 #include "../include/base.hpp"
 
 #include <sys/epoll.h>
@@ -24,7 +21,7 @@ namespace KvStoreServer{
 
     private:
         void NewConnection(std::shared_ptr<Socket> socket);
-        void Receive(int sockfd, std::string& message);
+        void Receive(int sockfd, const std::string& message);
         void WriteComplete();
         void RemoveConnection(int sockfd);
         void RemoveConnectionInLoop(int sockfd);

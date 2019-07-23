@@ -1,46 +1,49 @@
 #ifndef _KVSTORESERVER_NET_CLIENT_HPP_
 #define _KVSTORESERVER_NET_CLIENT_HPP_
 
-#include "socket.hpp"
-#include "connector.hpp"
+#include "address.hpp"
 #include "declear.hpp"
-#include "../include/timer.hpp"
+#include "timeStamp.hpp"
+#include "../include/callback.hpp"
+
+#include <map>
+#include <memory>
+#include <thread>
 
 namespace KvStoreServer{
 
     class Client
     {
     public:
-        Client(const char* ip, uint16_t port, size_t threadNum);
+        Client(size_t threadNum);
         ~Client();
 
         void Start();
         void Close();
+        int Connect(const char* ip, uint16_t port);
         void Send(int sockfd, const std::string& message);
 
+        void RunEvery(double interval, TimerCallback cb);
+
+        void SetRecvCallback(RecvCallback callback)
+        {
+            recvCallback_ = callback;
+        }
+
     private:
-        bool Connect(std::shared_ptr<Socket> socket);
-        void Receive(int sockfd, std::string& message);
+        void Receive(int sockfd, const std::string& message);
         void NewConnection(std::shared_ptr<Socket> socket);
         void WriteComplete();
         void RemoveConnection(int sockfd);
         void RemoveConnectionInLoop(int sockfd);
         void ClearConnections();
 
-        Address serverAddr_;
         std::shared_ptr<EventLoop> loop_;
         size_t threadNum_;
+        RecvCallback recvCallback_;
 
         std::map<int, std::shared_ptr<Connector>> connections_;
     
-        std::map<int, size_t> counts_;
-        std::string message_;
-
-        Timer timer_;
-        size_t sessions_;
-        size_t finishSessions_;
-        size_t maxCounts_;
-        size_t messageSize_;
     };
 }
 

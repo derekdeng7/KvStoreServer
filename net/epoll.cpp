@@ -1,3 +1,4 @@
+#include "channel.hpp"
 #include "epoll.hpp"
 
 namespace KvStoreServer{
@@ -37,7 +38,7 @@ namespace KvStoreServer{
         struct epoll_event ev;
         ev.data.ptr = pChannel;
         ev.events = pChannel->GetEvents();
-        int fd = pChannel->GetSockfd();     
+        int fd = pChannel->GetFd();     
         epoll_ctl(epollfd_, EPOLL_CTL_ADD, fd, &ev);       
     }
 
@@ -46,7 +47,7 @@ namespace KvStoreServer{
         struct epoll_event ev;
         ev.data.ptr = pChannel;
         ev.events = pChannel->GetEvents();
-        int fd = pChannel->GetSockfd();     
+        int fd = pChannel->GetFd();     
         epoll_ctl(epollfd_, EPOLL_CTL_DEL, fd, &ev);       
     }
 
@@ -55,7 +56,7 @@ namespace KvStoreServer{
         struct epoll_event ev;
         ev.data.ptr = pChannel;
         ev.events = pChannel->GetEvents();
-        int fd = pChannel->GetSockfd();     
+        int fd = pChannel->GetFd();     
         epoll_ctl(epollfd_, EPOLL_CTL_MOD, fd, &ev);       
     }
     

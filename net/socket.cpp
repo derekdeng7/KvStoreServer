@@ -1,3 +1,4 @@
+#include "address.hpp"
 #include "socket.hpp"
 
 namespace KvStoreServer{

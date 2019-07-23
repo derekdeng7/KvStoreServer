@@ -1,4 +1,7 @@
 #include "acceptor.hpp"
+#include "channel.hpp"
+#include "eventLoop.hpp"
+#include "socket.hpp"
 
 namespace KvStoreServer{
 
