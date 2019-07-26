@@ -6,7 +6,8 @@
 #include "eventLoop.hpp"
 #include "server.hpp"
 #include "socket.hpp"
-#include "../db/lsmTree.hpp"
+#include "timerQueue.hpp"
+#include "timeStamp.hpp"
 
 namespace KvStoreServer{
 
@@ -14,7 +15,8 @@ namespace KvStoreServer{
       : threadNum_(threadNum),
         port_(port),
         loop_(nullptr),
-        acceptor_(nullptr)
+        acceptor_(nullptr),
+        threadPool_(nullptr)
     {}
 
     Server::~Server()
@@ -24,10 +26,7 @@ namespace KvStoreServer{
 
     void Server::Start()
     {
-        //LSMTree* lsmTree = LSMTree::getInstance();
-        //lsmTree->Start();
-
-        loop_ = std::make_shared<EventLoop>(threadNum_);
+        loop_ = std::make_shared<EventLoop>();
         loop_->Start();
 
         acceptor_ = std::make_shared<Acceptor>(loop_, port_); 
@@ -36,14 +35,54 @@ namespace KvStoreServer{
         );
         acceptor_->Start();
 
+         threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>(threadNum_);
+        threadPool_->Start();
+
         loop_->Loop();
     }
 
     void Server::Close()
     {
+        threadPool_->Stop();
         ClearConnections();
         acceptor_->Close();
         loop_->Close();
+    }
+
+    void Server::RunAt(TimeStamp time, TimerCallback cb)
+    {
+        if(loop_->IsInLoopThread())
+        {
+             loop_->RunAt(time, cb);
+        }
+        else
+        {
+            loop_->QueueInLoop(std::bind(&EventLoop::RunAt, loop_, time, cb));
+        }
+    }
+
+    void Server::RunAfter(double delay, TimerCallback cb)
+    {
+        if(loop_->IsInLoopThread())
+        {
+             loop_->RunAfter(delay, cb);
+        }
+        else
+        {
+            loop_->QueueInLoop(std::bind(&EventLoop::RunAfter, loop_, delay, cb));
+        }
+    }
+
+    void Server::RunEvery(double interval, TimerCallback cb)
+    {
+        if(loop_->IsInLoopThread())
+        {
+             loop_->RunEvery(interval, cb);
+        }
+        else
+        {
+            loop_->QueueInLoop(std::bind(&EventLoop::RunEvery, loop_, interval, cb));
+        }
     }
 
     void Server::NewConnection(std::shared_ptr<Socket> socket)
@@ -64,6 +103,7 @@ namespace KvStoreServer{
 
     void Server::Receive(int sockfd, const std::string& message)
     {
+        //do services
         connections_[sockfd]->Send(message);
     }
 

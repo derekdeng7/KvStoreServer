@@ -55,7 +55,6 @@ namespace KvStoreServer{
         std::unique_ptr<Buffer> recvBuf_;
         std::unique_ptr<Buffer> sendBuf_;
         std::shared_ptr<EventLoop> loop_;
-        bool isMultiThread_;
         RecvCallback recvCallback_;
         RemoveConnectionCallback removeConnectionCallback_;
         WriteCompleteCallback writeCompleteCallback_;

@@ -4,7 +4,7 @@ using namespace KvStoreServer;
 
 int main(int argc, char *argv[])
 {
-    KvClient client(1);
+    KvClient client;
     client.Start();
 
     //client.StartBench("127.0.0.1", 8888, 1000, 16384, 4096);
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    client.SendEvery(3.0, sockfd, "hello derek!!!!");
+    client.Send(sockfd, "hello derek!!!!");
 
     client.Loop();
     

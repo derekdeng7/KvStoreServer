@@ -2,7 +2,10 @@
 #define _KVSTORESERVER_NET_SERVER_HPP_
 
 #include "declear.hpp"
+#include "task.hpp"
 #include "../include/base.hpp"
+#include "../include/callback.hpp"
+#include "../include/threadPool.hpp"
 
 #include <sys/epoll.h>
 #include <map>
@@ -19,6 +22,10 @@ namespace KvStoreServer{
         void Start();
         void Close();
 
+        void RunAt(TimeStamp time, TimerCallback cb);
+        void RunAfter(double delay, TimerCallback cb);
+        void RunEvery(double interval, TimerCallback cb);
+
     private:
         void NewConnection(std::shared_ptr<Socket> socket);
         void Receive(int sockfd, const std::string& message);
@@ -32,6 +39,7 @@ namespace KvStoreServer{
         std::map<int, std::shared_ptr<Connector>> connections_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Acceptor> acceptor_;
+        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
     };
 
 }

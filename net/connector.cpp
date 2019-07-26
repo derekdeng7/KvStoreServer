@@ -11,8 +11,7 @@ namespace KvStoreServer{
         connChannel_(nullptr),
         recvBuf_(new Buffer()),
         sendBuf_(new Buffer()),
-        loop_(loop),
-        isMultiThread_(loop_->GetThreadNum() > 0)
+        loop_(loop)
     {}
 
     Connector::~Connector()

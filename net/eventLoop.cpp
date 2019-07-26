@@ -1,7 +1,6 @@
 #include "channel.hpp"
 #include "epoll.hpp"
 #include "eventLoop.hpp"
-#include "task.hpp"
 #include "timerQueue.hpp"
 #include "timeStamp.hpp"
 #include "memory.h"
@@ -10,12 +9,10 @@
 
 namespace KvStoreServer{
 
-    EventLoop::EventLoop(size_t threadNum)
+    EventLoop::EventLoop()
        :quit_(false),
         eventfd_(CreateEventfd()),
         threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id())),
-        threadNum_(threadNum),
-        threadPool_(nullptr),
         epoller_(new Epoll()),
         timerQueue_(nullptr),
         wakeupfdChannel_(nullptr)
@@ -37,16 +34,11 @@ namespace KvStoreServer{
         );
         wakeupfdChannel_->AddChannel();
 
-        threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>(threadNum_);
-        threadPool_->Start();
-
         timerQueue_.reset(new TimerQueue(shared_from_this()));
     }
 
     void EventLoop::Close()
     {
-        threadPool_->Stop();
-
         quit_ = true;
         if(!IsInLoopThread())
         {
@@ -145,16 +137,6 @@ namespace KvStoreServer{
     void EventLoop::CancelTimer(TimerId timerId)
     {
         return timerQueue_->CancelTimer(timerId);
-    }
-
-    void EventLoop::AddTask(const TaskInSyncQueue& task)
-    {
-        threadPool_->AddTask(task);
-    }
-
-    size_t EventLoop::GetThreadNum() const
-    {
-        return threadNum_;
     }
 
     void EventLoop::HandleRead()

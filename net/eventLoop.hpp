@@ -2,7 +2,6 @@
 #define _KVSTORESERVER_NET_EVENTLOOP_HPP_
 
 #include "declear.hpp"
-#include "../include/threadPool.hpp"
 
 #include <vector>
 #include <sys/eventfd.h>
@@ -17,7 +16,7 @@ namespace KvStoreServer{
     class EventLoop : public std::enable_shared_from_this<EventLoop>
     {
     public:
-        EventLoop(size_t threadNum);
+        EventLoop();
         ~EventLoop();
 
         void Start();
@@ -38,9 +37,6 @@ namespace KvStoreServer{
         TimerId RunEvery(double interval, TimerCallback cb);
         void CancelTimer(TimerId timerId);
 
-        void AddTask(const TaskInSyncQueue& task);
-        size_t GetThreadNum() const;
-
     private:
         void HandleRead();  
         int CreateEventfd();
@@ -50,8 +46,6 @@ namespace KvStoreServer{
         bool callingPendingFunctors_;
         int eventfd_;
         const size_t threadid_;
-        size_t threadNum_;
-        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
         std::unique_ptr<Epoll> epoller_;
         std::unique_ptr<TimerQueue> timerQueue_;
         std::mutex mutex_;

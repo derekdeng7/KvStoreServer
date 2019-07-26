@@ -2,6 +2,7 @@
 #define _KVSTORESERVER_KVSTORE_KVCLIENT_HPP_
 
 #include "../net/client.hpp"
+#include "../net/timeStamp.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -15,7 +16,7 @@ namespace KvStoreServer{
     class KvClient
     {
     public:
-        KvClient(int threadNum);
+        KvClient();
         ~KvClient();
 
         void Start();
@@ -23,7 +24,6 @@ namespace KvStoreServer{
         void Receive(int sockfd, const std::string& message);
         
         void Send(int sockfd, const std::string& message);
-        void SendEvery(double interval, int sockfd, const std::string& message);
 
         void StartBench(const char* serverIp, uint16_t port, size_t sessions, size_t messageNum, size_t messageSize);
         
@@ -32,8 +32,6 @@ namespace KvStoreServer{
         bool CheckCommand();
 
     private:
-        int threadNum_;
-
         std::vector<std::string> argVec_;
         std::shared_ptr<Client> client_;
         std::shared_ptr<std::thread> thread_;

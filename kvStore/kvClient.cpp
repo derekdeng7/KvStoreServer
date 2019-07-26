@@ -5,9 +5,8 @@
 
 namespace KvStoreServer{
 
-    KvClient::KvClient(int threadNum)
-      : threadNum_(threadNum),
-        client_(nullptr),
+    KvClient::KvClient()
+      : client_(nullptr),
         thread_(nullptr)
     {}
 
@@ -21,7 +20,7 @@ namespace KvStoreServer{
 
     void KvClient::Start()
     {
-        client_ = std::make_shared<Client>(threadNum_);
+        client_ = std::make_shared<Client>();
         client_->SetRecvCallback(
             std::bind(&KvClient::Receive, this, std::placeholders::_1, std::placeholders::_2)
             );
@@ -54,14 +53,6 @@ namespace KvStoreServer{
     void KvClient::Send(int sockfd, const std::string& message)
     {
         client_->Send(sockfd, message);
-    }
-
-    void KvClient::SendEvery(double interval, int sockfd, const std::string& message)
-    {
-        void (KvClient::*fp)(int sockfd, const std::string& message) = &KvClient::Send;
-        client_->RunEvery(interval, std::bind(&KvClient::Send, this, sockfd, message));
-
-        Loop();
     }
 
     void KvClient::StartBench(const char* serverIp, uint16_t port, size_t sessions, size_t messageNum, size_t messageSize)

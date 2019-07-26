@@ -1,13 +1,12 @@
 #include "client.hpp"
 #include "connector.hpp"
 #include "socket.hpp"
-#include "timerQueue.hpp"
+#include "timeStamp.hpp"
 
 namespace KvStoreServer{
 
-    Client::Client(size_t threadNum)
-      : loop_(nullptr),
-        threadNum_(threadNum)
+    Client::Client()
+      : loop_(nullptr)
     {}
 
     Client::~Client()
@@ -17,10 +16,8 @@ namespace KvStoreServer{
 
      void Client::Start()
      {
-        loop_ = std::make_shared<EventLoop>(threadNum_);
+        loop_ = std::make_shared<EventLoop>();
         loop_->Start();
-
-        //RunEvery(3.0, std::bind(&Client::Send, this, Connect("127.0.0.1", 8888), "Client::Start()"));
 
         loop_->Loop();
      }
@@ -60,18 +57,6 @@ namespace KvStoreServer{
     void Client::Send(int sockfd, const std::string& message)
     {
        connections_[sockfd]->Send(message);
-    }
-
-    void Client::RunEvery(double interval, TimerCallback cb)
-    {
-        if(loop_->IsInLoopThread())
-        {
-             loop_->RunEvery(interval, cb);
-        }
-        else
-        {
-            loop_->QueueInLoop(std::bind(&EventLoop::RunEvery, loop_, interval, cb));
-        }
     }
 
     void Client::NewConnection(std::shared_ptr<Socket> socket)

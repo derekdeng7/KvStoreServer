@@ -3,7 +3,6 @@
 
 #include "address.hpp"
 #include "declear.hpp"
-#include "timeStamp.hpp"
 #include "../include/callback.hpp"
 
 #include <map>
@@ -15,15 +14,13 @@ namespace KvStoreServer{
     class Client
     {
     public:
-        Client(size_t threadNum);
+        Client();
         ~Client();
 
         void Start();
         void Close();
         int Connect(const char* ip, uint16_t port);
         void Send(int sockfd, const std::string& message);
-
-        void RunEvery(double interval, TimerCallback cb);
 
         void SetRecvCallback(RecvCallback callback)
         {
@@ -39,7 +36,6 @@ namespace KvStoreServer{
         void ClearConnections();
 
         std::shared_ptr<EventLoop> loop_;
-        size_t threadNum_;
         RecvCallback recvCallback_;
 
         std::map<int, std::shared_ptr<Connector>> connections_;
