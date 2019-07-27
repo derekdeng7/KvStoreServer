@@ -10,7 +10,6 @@
 #include "buffer.hpp"
 #include "declear.hpp"
 #include "../include/callback.hpp"
-#include "../db/lsmTree.hpp"
 
 namespace KvStoreServer{
 
@@ -66,19 +65,19 @@ namespace KvStoreServer{
             }
 
             int argNum = argVec.size();
-            LSMTree* lsmTree = LSMTree::getInstance();
+            //LSMTree* lsmTree = LSMTree::getInstance();
             
             if(!strcasecmp(argVec[0].c_str(), "put") && argNum == 3)
             {
-                lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
+                //lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
                 return message_ + " successfully!";
             }
             
             if(!strcasecmp(argVec[0].c_str(), "get") && argNum == 2)
             {
                 ValueType value;
-                bool flag = lsmTree->Get(atoi(argVec[1].c_str()), value);
-                if(!flag)
+                //bool flag = lsmTree->Get(atoi(argVec[1].c_str()), value);
+                //if(!flag)
                 {
                     return "key " + argVec[1] + " does not exist!";
                 }
@@ -88,13 +87,13 @@ namespace KvStoreServer{
             
             if(!strcasecmp(argVec[0].c_str(), "update") && argNum == 3)
             {
-                lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
+                //lsmTree->Put(atoi(argVec[1].c_str()), argVec[2].c_str());
                 return message_ + " successfully!";
             }
             
             if(!strcasecmp(argVec[0].c_str(), "remove") && argNum == 2)
             {
-                lsmTree->Remove(atoi(argVec[1].c_str()));
+                //lsmTree->Remove(atoi(argVec[1].c_str()));
                 return message_ + " successfully!";
             }
 

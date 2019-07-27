@@ -11,12 +11,10 @@
 
 namespace KvStoreServer{
 
-    Server::Server(size_t threadNum, uint16_t port)
-      : threadNum_(threadNum),
-        port_(port),
+    Server::Server(uint16_t port)
+      : port_(port),
         loop_(nullptr),
-        acceptor_(nullptr),
-        threadPool_(nullptr)
+        acceptor_(nullptr)
     {}
 
     Server::~Server()
@@ -35,18 +33,19 @@ namespace KvStoreServer{
         );
         acceptor_->Start();
 
-         threadPool_ = std::make_shared<ThreadPool<TaskInSyncQueue>>(threadNum_);
-        threadPool_->Start();
-
         loop_->Loop();
     }
 
     void Server::Close()
     {
-        threadPool_->Stop();
         ClearConnections();
         acceptor_->Close();
         loop_->Close();
+    }
+
+    void Server::Send(int sockfd, const std::string& message)
+    {
+       connections_[sockfd]->Send(message);
     }
 
     void Server::RunAt(TimeStamp time, TimerCallback cb)
@@ -104,7 +103,7 @@ namespace KvStoreServer{
     void Server::Receive(int sockfd, const std::string& message)
     {
         //do services
-        connections_[sockfd]->Send(message);
+        recvCallback_(sockfd, message);
     }
 
     void Server::WriteComplete()

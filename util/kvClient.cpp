@@ -35,7 +35,7 @@ namespace KvStoreServer{
 
     void KvClient::Receive(int sockfd, const std::string& message)
     {
-        std::cout << "sockfd: " << sockfd << " receive from server: " << message << std::endl;
+        std::cout  << message << std::endl;
     }
 
     void KvClient::Send(int sockfd, const std::string& message)
@@ -43,9 +43,9 @@ namespace KvStoreServer{
         client_->Send(sockfd, message);
     }
 
-    void KvClient::Loop()
+    void KvClient::Loop(int sockfd)
     {
-        //ShowHelp();
+        ShowHelp();
 
         while(true)
         {
@@ -72,7 +72,7 @@ namespace KvStoreServer{
 
             if(CheckCommand())
             {
-                //client_->Send(command);
+                client_->Send(sockfd, command);
             }
         }
     }
@@ -83,8 +83,7 @@ namespace KvStoreServer{
         std::cout << "   commands below are case insensitive" << std::endl << std::endl;
         std::cout << "   put key value" << std::endl;
         std::cout << "   get key" << std::endl;
-        std::cout << "   update key value" << std::endl;
-        std::cout << "   remove key" << std::endl;
+        std::cout << "   delete key" << std::endl;
         std::cout << "   quit" << std::endl;
         std::cout << "   help" << std::endl;
         std::cout << "   ----------------END----------------" << std::endl << std::endl;
@@ -102,11 +101,7 @@ namespace KvStoreServer{
         {
             return true;
         }
-        else if(!strcasecmp(argVec_[0].c_str(), "update") && argNum == 3)
-        {
-            return true;
-        }
-        else if(!strcasecmp(argVec_[0].c_str(), "remove") && argNum == 2)
+        else if(!strcasecmp(argVec_[0].c_str(), "delete") && argNum == 2)
         {
             return true;
         }

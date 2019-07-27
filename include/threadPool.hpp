@@ -62,8 +62,7 @@ namespace KvStoreServer {
                     if (!running_)
                         return;
               
-                    task.SetCallback(getCallback_, putCallback_);
-                    task.processTask();
+                    task();
                 }
             } 
         }

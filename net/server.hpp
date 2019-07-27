@@ -5,7 +5,6 @@
 #include "task.hpp"
 #include "../include/base.hpp"
 #include "../include/callback.hpp"
-#include "../include/threadPool.hpp"
 
 #include <sys/epoll.h>
 #include <map>
@@ -16,15 +15,21 @@ namespace KvStoreServer{
     class Server
     {
     public:
-        Server(size_t threadNum, uint16_t port);
+        Server(uint16_t port);
         ~Server();
 
         void Start();
         void Close();
+        void Send(int sockfd, const std::string& message);
 
         void RunAt(TimeStamp time, TimerCallback cb);
         void RunAfter(double delay, TimerCallback cb);
         void RunEvery(double interval, TimerCallback cb);
+
+        void SetRecvCallback(RecvCallback callback)
+        {
+            recvCallback_ = callback;
+        }
 
     private:
         void NewConnection(std::shared_ptr<Socket> socket);
@@ -36,10 +41,11 @@ namespace KvStoreServer{
 
         size_t threadNum_;
         uint16_t port_;
-        std::map<int, std::shared_ptr<Connector>> connections_;
         std::shared_ptr<EventLoop> loop_;
         std::shared_ptr<Acceptor> acceptor_;
-        std::shared_ptr<ThreadPool<TaskInSyncQueue>> threadPool_;
+        RecvCallback recvCallback_;
+
+        std::map<int, std::shared_ptr<Connector>> connections_;
     };
 
 }

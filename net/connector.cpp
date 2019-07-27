@@ -135,13 +135,6 @@ namespace KvStoreServer{
             
             std::string message = recvBuf_->RetriveAllAsString();
             recvCallback_(socket_->Fd(), message);
-            /*
-            if(isMultiThread_)
-            {
-                TaskInSyncQueue task(std::bind(&Connector::Send, this, std::placeholders::_1), message);
-                loop_->AddTask(task);
-            }
-            */
         }
     }
 

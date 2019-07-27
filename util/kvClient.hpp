@@ -25,21 +25,19 @@ namespace KvStoreServer{
         
         void Send(int sockfd, const std::string& message);
         
-        void Loop();
+        void Loop(int sockfd);
+
+    private:
         void ShowHelp();
         bool CheckCommand();
 
-    private:
         std::vector<std::string> argVec_;
         std::shared_ptr<Client> client_;
         std::shared_ptr<std::thread> thread_;
 
-        std::map<int, size_t> counts_;
         std::string message_;
 
         TimeStamp stamp_;
-        size_t sessions_;
-        size_t messageNum_;
     };
 
 }
