@@ -1,7 +1,7 @@
 #include "client.hpp"
 #include "connector.hpp"
 #include "socket.hpp"
-#include "timeStamp.hpp"
+#include "timerQueue.hpp"
 
 namespace KvStoreServer{
 
@@ -18,6 +18,8 @@ namespace KvStoreServer{
      {
         loop_ = std::make_shared<EventLoop>();
         loop_->Start();
+
+        //RunEvery(3.0, std::bind(&Client::Send, this, Connect("127.0.0.1", 8888), "Client::Start()"));
 
         loop_->Loop();
      }

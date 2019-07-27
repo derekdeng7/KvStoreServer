@@ -15,7 +15,7 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/db
   ${PROJECT_SOURCE_DIR}/net
-  ${PROJECT_SOURCE_DIR}/kvStore
+  ${PROJECT_SOURCE_DIR}/util
 )
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS "-g -pthread")
 
 add_subdirectory(db)
 add_subdirectory(net)
-add_subdirectory(kvStore)
+add_subdirectory(util)
 
 add_executable(KvStoreServer ${PROJECT_SOURCE_DIR}/test/testServer.cpp)
 target_link_libraries(KvStoreServer kvStore_lib net_lib db_lib)

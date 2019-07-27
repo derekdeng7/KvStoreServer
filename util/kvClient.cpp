@@ -36,58 +36,11 @@ namespace KvStoreServer{
     void KvClient::Receive(int sockfd, const std::string& message)
     {
         std::cout << "sockfd: " << sockfd << " receive from server: " << message << std::endl;
-        /* 
-        if(++counts_[sockfd] >= messageNum_)
-        {
-            //std::cout << "sockfd: " << sockfd << " finishes tasks and shutdowns" << std::endl;
-            shutdown(sockfd, SHUT_WR);
-            sessions_--;
-        }
-        else
-        {
-            Send(sockfd, message);
-        }
-        */
     }
 
     void KvClient::Send(int sockfd, const std::string& message)
     {
         client_->Send(sockfd, message);
-    }
-
-    void KvClient::StartBench(const char* serverIp, uint16_t port, size_t sessions, size_t messageNum, size_t messageSize)
-    {
-        sessions_ = sessions;
-        messageNum_ = messageNum;
-        message_ = std::string(messageSize, 'a');
-        
-        for(size_t i = 0; i < sessions_; i++)
-        {
-            int fd = CreateConnection(serverIp, port);
-            if(fd != -1)
-            {
-                counts_[fd] = 0;
-            }
-        }
-
-        stamp_.Init();
-
-        for(auto iter : counts_)
-        {
-            Send(iter.first, message_);
-        }
-
-        while(sessions_);
-
-        double time =  static_cast<double>(stamp_.MicroSecondsSinceInit() / 1000 / 1000);
-        std::cout << "///////////////////////////////////////////////////////////////////////////////////" << std::endl << std::endl;        
-            
-        std::cout << "[i] totally " << static_cast<size_t>(sessions * messageSize * messageNum_ / 1048576) << " MB sent in " << time << " seconds,  " 
-            << static_cast<int>(sessions * messageNum_  /  time) << " QPS"<< std::endl << std::endl;
-                    
-        std::cout << "///////////////////////////////////////////////////////////////////////////////////" <<std::endl;
-
-        Loop();
     }
 
     void KvClient::Loop()

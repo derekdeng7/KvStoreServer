@@ -24,8 +24,6 @@ namespace KvStoreServer{
         void Receive(int sockfd, const std::string& message);
         
         void Send(int sockfd, const std::string& message);
-
-        void StartBench(const char* serverIp, uint16_t port, size_t sessions, size_t messageNum, size_t messageSize);
         
         void Loop();
         void ShowHelp();

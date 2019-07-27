@@ -1,13 +1,15 @@
-#include "../kvStore/kvClient.hpp"
+#include "../util/kvClient.hpp"
+#include "../util/benchClient.hpp"
 
 using namespace KvStoreServer;
 
 int main(int argc, char *argv[])
 {
+    //BenchClient bClient("127.0.0.1", 8888, 1000, 1024, 16);
+    //bClient.StartBench();
+
     KvClient client;
     client.Start();
-
-    //client.StartBench("127.0.0.1", 8888, 1000, 16384, 4096);
 
     int sockfd = client.CreateConnection("127.0.0.1", 8888);
     if(sockfd == -1)
