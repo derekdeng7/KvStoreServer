@@ -24,7 +24,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 set(CMAKE_CXX_FLAGS "-g -pthread")
 
-#add_subdirectory(leveldb)
 add_subdirectory(net)
 add_subdirectory(util)
 

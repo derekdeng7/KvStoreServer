@@ -6,7 +6,7 @@
 namespace KvStoreServer{
 
     Client::Client()
-      : loop_(nullptr)
+      : loop_(new EventLoop())
     {}
 
     Client::~Client()
@@ -16,10 +16,8 @@ namespace KvStoreServer{
 
      void Client::Start()
      {
-        loop_ = std::make_shared<EventLoop>();
+        //loop_ = std::make_shared<EventLoop>();
         loop_->Start();
-
-        //RunEvery(3.0, std::bind(&Client::Send, this, Connect("127.0.0.1", 8888), "Client::Start()"));
 
         loop_->Loop();
      }

@@ -2,7 +2,6 @@
 #define _KVSTORESERVER_THREADPOOL_HPP
 
 #include "syncQueue.hpp"
-#include "../db/lsmTree.hpp"
 
 #include <vector>
 #include <thread>
@@ -85,9 +84,6 @@ namespace KvStoreServer {
         SyncQueue<T> syQueue_; 
         std::atomic_bool running_;
         std::once_flag flag_;
-
-        GetCallback getCallback_;
-        PutCallback putCallback_;
     };
 }
 

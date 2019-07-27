@@ -21,9 +21,6 @@ namespace KvStoreServer{
     typedef std::function<void(std::shared_ptr<Socket> socket)> NewConnectionCallback;
     typedef std::function<void(int sockfd)> RemoveConnectionCallback;
 
-    typedef std::function<bool(const KeyType& key, ValueType& value)> GetCallback;
-    typedef std::function<void(const KeyType& key, const ValueType& value)> PutCallback;
-
 }
 
 #endif // _KVSTORESERVER_CALLBACK_HPP

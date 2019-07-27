@@ -2,7 +2,6 @@
 #define _KVSTORESERVER_NET_SERVER_HPP_
 
 #include "declear.hpp"
-#include "task.hpp"
 #include "../include/base.hpp"
 #include "../include/callback.hpp"
 

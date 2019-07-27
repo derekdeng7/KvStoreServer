@@ -22,9 +22,7 @@ namespace KvStoreServer{
         void Start();
         int CreateConnection(const char* serverIp, uint16_t port);
         void Receive(int sockfd, const std::string& message);
-        
         void Send(int sockfd, const std::string& message);
-        
         void Loop(int sockfd);
 
     private:
