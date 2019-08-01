@@ -3,7 +3,7 @@
 
 using namespace KvStoreServer;
 
-int main(int argc, char *argv[])
+void TestKvClient()
 {
     KvClient client;
     client.Start();
@@ -12,10 +12,22 @@ int main(int argc, char *argv[])
     if(sockfd == -1)
     {
         std::cout << "Fail to CreateConnection" << std::endl;
-        return -1;
+        return;
     }
 
     client.Loop(sockfd);
-    
+}
+
+void TestBenchClient()
+{
+    BenchClient client("127.0.0.1", 8888, 1000, 8192, 2048);
+    client.StartBench();
+}
+
+int main(int argc, char *argv[])
+{
+    //TestKvClient();
+    TestBenchClient();
+   
     return 1;
 }
