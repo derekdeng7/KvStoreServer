@@ -1,10 +1,8 @@
 #ifndef _KVSTORESERVER_KVSTORE_BENCHBenchBenchClient_HPP_
 #define _KVSTORESERVER_KVSTORE_BENCHBenchBenchClient_HPP_
 
-#include "../net/address.hpp"
 #include "../net/declear.hpp"
 #include "../include/callback.hpp"
-#include "../net/timeStamp.hpp"
 
 #include <map>
 #include <memory>
@@ -40,7 +38,7 @@ namespace KvStoreServer{
         std::map<int, size_t> counts_;
         std::string message_;
 
-        TimeStamp stamp_;
+        std::unique_ptr<TimeStamp> stamp_;
         size_t sessions_;
         size_t finishSessions_;
         size_t messageNum_;

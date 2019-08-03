@@ -1,5 +1,7 @@
 #include "benchClient.hpp"
+#include "../net/address.hpp"
 #include "../net/connector.hpp"
+#include "../net/eventLoop.hpp"
 #include "../net/socket.hpp"
 #include "../net/timeStamp.hpp"
 
@@ -36,7 +38,7 @@ namespace KvStoreServer{
             }
         }
 
-        stamp_.Init();
+        stamp_->Init();
 
         for(auto iter : counts_)
         {
@@ -108,7 +110,7 @@ namespace KvStoreServer{
 
             if(++finishSessions_ == sessions_)
             {
-                double time =  static_cast<double>(stamp_.MicroSecondsSinceInit() / 1000 / 1000);
+                double time =  static_cast<double>(stamp_->MicroSecondsSinceInit() / 1000 / 1000);
                 std::cout << "///////////////////////////////////////////////////////////////////////////////////" << std::endl << std::endl;        
             
                 std::cout << "[i] totally " << static_cast<size_t>(sessions_ * messageSize_ * messageNum_ / 1048576) << " MB sent in " << time << " seconds,  " 

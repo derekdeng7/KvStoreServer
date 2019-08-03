@@ -1,4 +1,5 @@
 #include "benchServer.hpp"
+#include "../net/server.hpp"
 
 #include <iostream>
 #include <sstream>

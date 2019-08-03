@@ -26,8 +26,8 @@ void TestBenchClient()
 
 int main(int argc, char *argv[])
 {
-    //TestKvClient();
-    TestBenchClient();
+    TestKvClient();
+    //TestBenchClient();
    
     return 1;
 }

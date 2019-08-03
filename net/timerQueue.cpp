@@ -1,7 +1,3 @@
-#include <sys/timerfd.h>
-#include <inttypes.h>
-#include <iostream>
-
 #include "channel.hpp"
 #include "epoll.hpp"
 #include "eventLoop.hpp"
@@ -9,6 +5,10 @@
 #include "timer.hpp"
 #include "timeStamp.hpp"
 #include "unistd.h"
+
+#include <sys/timerfd.h>
+#include <inttypes.h>
+#include <iostream>
 
 namespace KvStoreServer
 {

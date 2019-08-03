@@ -1,5 +1,3 @@
-#include <functional>
-
 #include "acceptor.hpp"
 #include "connector.hpp"
 #include "epoll.hpp"
@@ -9,12 +7,15 @@
 #include "timerQueue.hpp"
 #include "timeStamp.hpp"
 
+#include <functional>
+
 namespace KvStoreServer{
 
-    Server::Server(uint16_t port)
+    Server::Server(uint16_t port, int timeoutSecond )
       : port_(port),
         loop_(nullptr),
-        acceptor_(nullptr)
+        acceptor_(nullptr),
+        timeoutSecond_(timeoutSecond)
     {}
 
     Server::~Server()
@@ -33,6 +34,12 @@ namespace KvStoreServer{
         );
         acceptor_->Start();
 
+        if(timeoutSecond_)
+        {
+            connectionBuckets_.push(Bucket());
+            loop_->RunEvery(1.0, std::bind(&Server::Timeout, this));
+        }
+
         loop_->Loop();
     }
 
@@ -45,7 +52,12 @@ namespace KvStoreServer{
 
     void Server::Send(int sockfd, const std::string& message)
     {
-       connections_[sockfd]->Send(message);
+       if(connections_.find(sockfd) != connections_.end())
+            connections_[sockfd]->Send(message);
+        else
+        {
+            std::cout << "connection fd: " << sockfd << " has been closed" << std::endl;
+        }
     }
 
     void Server::RunAt(TimeStamp time, TimerCallback cb)
@@ -98,10 +110,29 @@ namespace KvStoreServer{
         );
         connector->Start();
         connections_[socket->Fd()] = connector;
+
+        if(timeoutSecond_)
+        {
+            std::shared_ptr<HeartBeat> beat(new HeartBeat(connector));
+            connectionBuckets_.back().insert(beat);
+
+            std::weak_ptr<HeartBeat> weakBeat(beat);
+            connector->SetHeartBeat(weakBeat);
+        }
     }
 
     void Server::Receive(int sockfd, const std::string& message)
     {
+        if(timeoutSecond_)
+        {
+            std::weak_ptr<HeartBeat> weakBeat(connections_[sockfd]->GetHeartBeat());
+            std::shared_ptr<HeartBeat> beat(weakBeat.lock());
+            if(beat)
+            {
+                connectionBuckets_.back().insert(beat);
+            }
+        }
+
         //do services
         recvCallback_(sockfd, message);
     }
@@ -138,5 +169,12 @@ namespace KvStoreServer{
             (iter->second).reset();
             iter++;
         }
+    }
+
+    void Server::Timeout()
+    {
+        connectionBuckets_.push(Bucket());
+        if(connectionBuckets_.size() > timeoutSecond_)
+            connectionBuckets_.pop();
     }
 }

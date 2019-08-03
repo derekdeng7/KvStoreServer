@@ -18,6 +18,7 @@ namespace KvStoreServer{
     class TimerQueue;
     class Timer;
     class TimeStamp;
+    struct HeartBeat;
 }
 
 #endif //_KVSTORESERVER_NET_DECLEAR_HPP_

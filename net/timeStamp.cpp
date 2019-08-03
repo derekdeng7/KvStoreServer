@@ -1,8 +1,8 @@
+#include "timeStamp.hpp"
+
 #include <inttypes.h>
 #include <sys/time.h>
 #include <stdio.h>
-
-#include "timeStamp.hpp"
 
 namespace KvStoreServer{
 

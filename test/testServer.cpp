@@ -17,8 +17,8 @@ void TestBenchServer()
 
 int main(int argc, char const *argv[])
 {
-    //TestKvServer();
-    TestBenchServer();
+    TestKvServer();
+    //TestBenchServer();
 
     return 1;
 }

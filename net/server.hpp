@@ -2,19 +2,21 @@
 #define _KVSTORESERVER_NET_SERVER_HPP_
 
 #include "declear.hpp"
-#include "../include/base.hpp"
 #include "../include/callback.hpp"
+#include "connector.hpp"
 
 #include <sys/epoll.h>
 #include <map>
 #include <memory>
+#include <queue>
+#include <unordered_set>
 
 namespace KvStoreServer{
 
     class Server
     {
     public:
-        Server(uint16_t port);
+        Server(uint16_t port, int timeoutSecond = 0);
         ~Server();
 
         void Start();
@@ -38,6 +40,8 @@ namespace KvStoreServer{
         void RemoveConnectionInLoop(int sockfd);
         void ClearConnections();
 
+        void Timeout();
+
         size_t threadNum_;
         uint16_t port_;
         std::shared_ptr<EventLoop> loop_;
@@ -45,6 +49,11 @@ namespace KvStoreServer{
         RecvCallback recvCallback_;
 
         std::map<int, std::shared_ptr<Connector>> connections_;
+
+        typedef std::unordered_set<std::shared_ptr<HeartBeat>> Bucket;
+        std::queue<Bucket> connectionBuckets_;
+        int timeoutSecond_;
+        
     };
 
 }

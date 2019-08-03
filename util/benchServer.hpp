@@ -1,7 +1,7 @@
 #ifndef _KVSTORESERVER_KVSTORE_BENCHSERVER_HPP_
 #define _KVSTORESERVER_KVSTORE_BENCHSERVER_HPP_
 
-#include "../net/server.hpp"
+#include "../net/declear.hpp"
 
 #include <vector>
 #include <thread>

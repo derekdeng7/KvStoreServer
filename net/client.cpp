@@ -1,5 +1,6 @@
 #include "client.hpp"
 #include "connector.hpp"
+#include "eventLoop.hpp"
 #include "socket.hpp"
 #include "timerQueue.hpp"
 
@@ -56,7 +57,12 @@ namespace KvStoreServer{
 
     void Client::Send(int sockfd, const std::string& message)
     {
-       connections_[sockfd]->Send(message);
+        if(connections_.find(sockfd) != connections_.end())
+            connections_[sockfd]->Send(message);
+        else
+        {
+            std::cout << "connection fd: " << sockfd << " has been closed" << std::endl;
+        }
     }
 
     void Client::NewConnection(std::shared_ptr<Socket> socket)

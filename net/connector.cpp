@@ -1,6 +1,8 @@
+#include "buffer.hpp"
 #include "channel.hpp"
 #include "connector.hpp"
 #include "epoll.hpp"
+#include "eventLoop.hpp"
 #include "server.hpp"
 #include "socket.hpp"
 
@@ -124,15 +126,13 @@ namespace KvStoreServer{
         }
         else if(read_size == 0)
         {
-            //std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << std::endl; 
+            std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->GetServerAddr().sin_addr) << ":" << ntohs(socket_->GetServerAddr().sin_port) << std::endl; 
            HandleClose();
         }
         else
         {
             std::string strbuf(buf);
             recvBuf_->Append(strbuf);
-            //std::cout << "[i] receive from " << inet_ntoa(socket_->ServerAddr().sin_addr) << ":" << ntohs(socket_->ServerAddr().sin_port) << " : " << recvBuf_->GetChar() << std::endl; 
-            
             std::string message = recvBuf_->RetriveAllAsString();
             recvCallback_(socket_->Fd(), message);
         }
