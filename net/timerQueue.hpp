@@ -31,7 +31,7 @@ namespace KvStoreServer
     class TimerQueue
     {
     public:
-        TimerQueue(std::shared_ptr<EventLoop> loop);
+        explicit TimerQueue(std::shared_ptr<EventLoop> loop);
         ~TimerQueue();
 
         TimerId AddTimer(TimerCallback cb, TimeStamp when, double interval);

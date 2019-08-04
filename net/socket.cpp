@@ -1,6 +1,8 @@
 #include "address.hpp"
 #include "socket.hpp"
 
+#include <iostream>
+
 namespace KvStoreServer{
     
     Socket::Socket()
@@ -13,10 +15,8 @@ namespace KvStoreServer{
 
     Socket::~Socket()
     {
-        if(Valid())
-        {
-            close(fd_);
-        }
+        close(fd_);
+        std::cout << "[-] close connection from " << inet_ntoa(addr_.sin_addr) << ":" << ntohs(addr_.sin_port) << ", sockfd: " << fd_<< std::endl; 
     }
 
     int Socket::Fd() const

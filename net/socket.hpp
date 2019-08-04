@@ -13,7 +13,7 @@ namespace KvStoreServer{
     {   
     public:
         Socket();
-        Socket(int fd);
+        explicit Socket(int fd);
         ~Socket();
 
         int Fd() const;

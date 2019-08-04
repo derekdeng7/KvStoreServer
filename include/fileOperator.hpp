@@ -8,7 +8,7 @@ namespace KvStoreServer{
     class FileOperator
     {
     public:
-        FileOperator(const char* mode, const char* filename = MANIFESTPATH)
+        explicit FileOperator(const char* mode, const char* filename = MANIFESTPATH)
           : filename_(filename), mode_(mode)
         { 
             fp_ = fopen(filename_, mode_);

@@ -15,10 +15,10 @@ namespace KvStoreServer {
     class ThreadPool
     {
     public:
-        ThreadPool(size_t threadNum = std::thread::hardware_concurrency())
-        : threadNum_(threadNum),
-          syQueue_(),
-	  running_(true)
+        explicit ThreadPool(size_t threadNum = std::thread::hardware_concurrency())
+          : threadNum_(threadNum),
+            syQueue_(),
+	        running_(true)
         {}
 
         ~ThreadPool()

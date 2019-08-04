@@ -48,7 +48,7 @@ namespace KvStoreServer{
         if(connfd > 0)
         {
             std::cout << "[+] new connection from " << inet_ntoa(cliaddr.sin_addr) 
-                << ":" << ntohs(cliaddr.sin_port) << " new socket fd: " << connfd << std::endl;
+                << ":" << ntohs(cliaddr.sin_port) << " , socket fd: " << connfd << std::endl;
         }
         else
         {
@@ -65,6 +65,7 @@ namespace KvStoreServer{
         if(newConnectionCallback_)
         {
             std::shared_ptr<Socket> socket(new Socket(connfd));
+            socket->SetServerAddr(cliaddr);
             newConnectionCallback_(socket);
         }
         else

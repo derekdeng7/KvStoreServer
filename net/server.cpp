@@ -11,11 +11,11 @@
 
 namespace KvStoreServer{
 
-    Server::Server(uint16_t port, int timeoutSecond )
+    Server::Server(uint16_t port, int heartBeatSecond )
       : port_(port),
         loop_(nullptr),
         acceptor_(nullptr),
-        timeoutSecond_(timeoutSecond)
+        heartBeatSecond_(heartBeatSecond)
     {}
 
     Server::~Server()
@@ -34,7 +34,7 @@ namespace KvStoreServer{
         );
         acceptor_->Start();
 
-        if(timeoutSecond_)
+        if(heartBeatSecond_)
         {
             connectionBuckets_.push(Bucket());
             loop_->RunEvery(1.0, std::bind(&Server::Timeout, this));
@@ -111,7 +111,7 @@ namespace KvStoreServer{
         connector->Start();
         connections_[socket->Fd()] = connector;
 
-        if(timeoutSecond_)
+        if(heartBeatSecond_)
         {
             std::shared_ptr<HeartBeat> beat(new HeartBeat(connector));
             connectionBuckets_.back().insert(beat);
@@ -123,7 +123,8 @@ namespace KvStoreServer{
 
     void Server::Receive(int sockfd, const std::string& message)
     {
-        if(timeoutSecond_)
+        //only use for heartbeat
+        if(heartBeatSecond_)
         {
             std::weak_ptr<HeartBeat> weakBeat(connections_[sockfd]->GetHeartBeat());
             std::shared_ptr<HeartBeat> beat(weakBeat.lock());
@@ -131,10 +132,19 @@ namespace KvStoreServer{
             {
                 connectionBuckets_.back().insert(beat);
             }
+            else
+            {
+                std::shared_ptr<HeartBeat> beat(new HeartBeat(connections_[sockfd]));
+                connectionBuckets_.back().insert(beat);
+
+                std::weak_ptr<HeartBeat> weakBeat(beat);
+                connections_[sockfd]->SetHeartBeat(weakBeat);
+            }
         }
 
-        //do services
-        recvCallback_(sockfd, message);
+        if(message != "Heart beat...")
+            recvCallback_(sockfd, message);   //do services
+
     }
 
     void Server::WriteComplete()
@@ -154,9 +164,7 @@ namespace KvStoreServer{
         if(iter != connections_.end())
         {
             (iter->second)->Close();
-            //(iter->second).reset();
             connections_.erase(sockfd);
-            //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
         }
     }
 
@@ -174,7 +182,7 @@ namespace KvStoreServer{
     void Server::Timeout()
     {
         connectionBuckets_.push(Bucket());
-        if(connectionBuckets_.size() > timeoutSecond_)
+        if(connectionBuckets_.size() > heartBeatSecond_)
             connectionBuckets_.pop();
     }
 }

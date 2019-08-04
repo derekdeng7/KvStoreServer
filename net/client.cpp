@@ -83,7 +83,13 @@ namespace KvStoreServer{
 
     void Client::Receive(int sockfd, const std::string& message)
     {
-        recvCallback_(sockfd, message);
+        if(message == "Heart beat...")
+        {
+            //std::cout << "Receive heart beat..." << std::endl;
+            Send(sockfd, message);
+        }
+        else
+            recvCallback_(sockfd, message);
     }
 
     void Client::WriteComplete()

@@ -16,7 +16,7 @@ namespace KvStoreServer{
     class Server
     {
     public:
-        Server(uint16_t port, int timeoutSecond = 0);
+        explicit Server(uint16_t port, int heartBeatSecond = 0);
         ~Server();
 
         void Start();
@@ -50,9 +50,10 @@ namespace KvStoreServer{
 
         std::map<int, std::shared_ptr<Connector>> connections_;
 
+        //only use for heartbeat
         typedef std::unordered_set<std::shared_ptr<HeartBeat>> Bucket;
         std::queue<Bucket> connectionBuckets_;
-        int timeoutSecond_;
+        int heartBeatSecond_;
         
     };
 

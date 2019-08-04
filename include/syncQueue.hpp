@@ -15,7 +15,7 @@ namespace KvStoreServer{
     class SyncQueue
     {
     public:
-        SyncQueue(int maxSize = MAXSYNCQUEUESIZE) :maxSize_(maxSize), needStop_(false)
+        explicit SyncQueue(int maxSize = MAXSYNCQUEUESIZE) :maxSize_(maxSize), needStop_(false)
         {}
 
         void Put(const T&x)

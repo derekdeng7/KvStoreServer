@@ -5,6 +5,7 @@
 #include "eventLoop.hpp"
 #include "server.hpp"
 #include "socket.hpp"
+#include "timerQueue.hpp"
 
 namespace KvStoreServer{
 
@@ -21,7 +22,6 @@ namespace KvStoreServer{
         this->Close();
         //std::cout << "Connector desctruct" << std::endl;
     }
-
 
     void Connector::Start()
     {
@@ -102,6 +102,11 @@ namespace KvStoreServer{
         HandleClose();
     }
 
+    void Connector::ForceCloseWithDelay(double seconds)
+    {
+        loop_->RunAfter(seconds, std::bind(&Connector::ForceClose, this)); 
+    }
+
     void Connector::HandleRead()
     {
         int sockfd = connChannel_->GetFd();
@@ -126,7 +131,6 @@ namespace KvStoreServer{
         }
         else if(read_size == 0)
         {
-            std::cout << "[-] read 0, closed socket " << inet_ntoa(socket_->GetServerAddr().sin_addr) << ":" << ntohs(socket_->GetServerAddr().sin_port) << std::endl; 
            HandleClose();
         }
         else
@@ -146,7 +150,6 @@ namespace KvStoreServer{
             int n = write(sockfd, sendBuf_->GetChar(), sendBuf_->DataSize());
             if(n > 0)
             {
-                //std::cout << "write " << n << " bytes data again" << std::endl;
                 sendBuf_->Retrieve(n); 
                 if(sendBuf_->DataSize() == 0)
                 {

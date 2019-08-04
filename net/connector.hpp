@@ -27,6 +27,7 @@ namespace KvStoreServer{
 
         void ForceClose();
         void ForceCloseInLoop();
+        void ForceCloseWithDelay(double seconds);
 
         void HandleRead();
         void HandleWrite();
@@ -81,7 +82,8 @@ namespace KvStoreServer{
             auto conn = weakConn_.lock();
             if(conn)
             {
-                conn->Shutdown();
+                //conn->Shutdown();
+                conn->Send("Heart beat...");
             }
         }
 
