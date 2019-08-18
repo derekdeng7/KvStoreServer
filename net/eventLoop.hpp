@@ -45,7 +45,7 @@ namespace KvStoreServer{
         std::atomic_bool quit_;
         bool callingPendingFunctors_;
         int eventfd_;
-        const size_t threadid_;
+        size_t threadid_;
         std::unique_ptr<Epoll> epoller_;
         std::unique_ptr<TimerQueue> timerQueue_;
         std::mutex mutex_;

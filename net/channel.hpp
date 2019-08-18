@@ -12,7 +12,7 @@ namespace KvStoreServer{
     class Channel
     {
     public:
-        Channel(int fd, std::shared_ptr<EventLoop> loop);
+        Channel(int fd, std::weak_ptr<EventLoop> loop);
         ~Channel();
 
         void AddChannel();
@@ -39,7 +39,7 @@ namespace KvStoreServer{
         int revent_;
         EventCallback readCallback_;
         EventCallback writeCallback_;
-        std::shared_ptr<EventLoop> loop_;
+        std::weak_ptr<EventLoop> loop_;
 
     };
 

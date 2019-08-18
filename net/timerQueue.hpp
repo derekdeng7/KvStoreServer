@@ -31,7 +31,7 @@ namespace KvStoreServer
     class TimerQueue
     {
     public:
-        explicit TimerQueue(std::shared_ptr<EventLoop> loop);
+        explicit TimerQueue(std::weak_ptr<EventLoop> loop);
         ~TimerQueue();
 
         TimerId AddTimer(TimerCallback cb, TimeStamp when, double interval);
@@ -49,7 +49,7 @@ namespace KvStoreServer
         bool Insert(Timer* pItem);
 
         const int timerfd_;
-        std::shared_ptr<EventLoop> loop_;
+        std::weak_ptr<EventLoop> loop_;
         std::unique_ptr<Channel>  timerChannel_;    
 
         std::set<std::pair<TimeStamp, Timer*>> timerSet_;

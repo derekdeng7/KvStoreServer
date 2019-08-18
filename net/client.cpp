@@ -7,7 +7,7 @@
 namespace KvStoreServer{
 
     Client::Client()
-      : loop_(new EventLoop())
+      : loop_(nullptr)
     {}
 
     Client::~Client()
@@ -17,9 +17,8 @@ namespace KvStoreServer{
 
      void Client::Start()
      {
-        //loop_ = std::make_shared<EventLoop>();
+        loop_ = std::make_shared<EventLoop>();
         loop_->Start();
-
         loop_->Loop();
      }
 
@@ -110,7 +109,6 @@ namespace KvStoreServer{
         {
             (iter->second)->Close();
             connections_.erase(sockfd);
-            //std::cout << "remove sockfd: " << sockfd << ", " << connections_.size() << " connection rest now"<< std::endl;
         }
     }
 
@@ -120,8 +118,7 @@ namespace KvStoreServer{
         while( iter != connections_.end())
         {
             (iter->second)->Close();
-            (iter->second).reset();
-            iter++;
+            iter = connections_.erase(iter);
         }
     }
 

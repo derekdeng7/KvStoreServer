@@ -29,7 +29,6 @@ namespace KvStoreServer{
         leveldb::Options opts;
         opts.create_if_missing = true;
         leveldb::Status status = leveldb::DB::Open(opts, "./testdb", &db_);
-        assert(status.ok());
 
         threadPool_ = std::make_shared<ThreadPool<EventCallback>>(threadNum_);
         threadPool_->Start();
@@ -60,7 +59,8 @@ namespace KvStoreServer{
 
             if(!strcasecmp(argVec_[0].c_str(), "quit"))
             {
-                exit(0);
+                server_->Close();
+                return;
             }
         }
     }

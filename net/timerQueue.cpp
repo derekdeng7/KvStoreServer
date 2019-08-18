@@ -67,7 +67,7 @@ namespace KvStoreServer
         }
     }
 
-    TimerQueue::TimerQueue(std::shared_ptr<EventLoop> loop)
+    TimerQueue::TimerQueue(std::weak_ptr<EventLoop> loop)
         :timerfd_(CreateTimerfd()),
         loop_(loop),
         timerChannel_(new Channel(timerfd_, loop_))
@@ -85,19 +85,32 @@ namespace KvStoreServer
     TimerQueue::~TimerQueue()
     {
         close(timerfd_);
+        for(const std::pair<TimeStamp, Timer*>& timer : timerSet_)
+        {
+            delete timer.second;
+        }
     }
 
     TimerId TimerQueue::AddTimer(TimerCallback cb, TimeStamp when, double interval)
     {
         Timer* timer = new Timer(cb, when, interval); 
-        loop_->QueueInLoop(std::bind(&TimerQueue::AddTimerInLoop, this, timer));
+
+        auto loop = loop_.lock();
+        if(loop)
+        {
+           loop->QueueInLoop(std::bind(&TimerQueue::AddTimerInLoop, this, timer));
+        }
        
         return TimerId(timer, timer->Sequence());
     }
 
     void TimerQueue::CancelTimer(TimerId timerId)
     {
-        loop_->RunInLoop(std::bind(&TimerQueue::CancelTimerInLoop, this, timerId));
+        auto loop = loop_.lock();
+        if(loop)
+        {
+           loop->RunInLoop(std::bind(&TimerQueue::CancelTimerInLoop, this, timerId));
+        }
     }
 
     void TimerQueue::AddTimerInLoop(Timer* timer)

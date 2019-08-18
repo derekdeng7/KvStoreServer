@@ -174,8 +174,7 @@ namespace KvStoreServer{
         while( iter != connections_.end())
         {
             (iter->second)->Close();
-            (iter->second).reset();
-            iter++;
+            iter = connections_.erase(iter);
         }
     }
 

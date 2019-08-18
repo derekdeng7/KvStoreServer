@@ -12,7 +12,6 @@ namespace KvStoreServer{
     EventLoop::EventLoop()
        :quit_(false),
         eventfd_(CreateEventfd()),
-        threadid_(std::hash<std::thread::id>{}(std::this_thread::get_id())),
         epoller_(new Epoll()),
         timerQueue_(nullptr),
         wakeupfdChannel_(nullptr)
@@ -26,6 +25,8 @@ namespace KvStoreServer{
 
     void EventLoop::Start()
     {
+         threadid_ = std::hash<std::thread::id>{}(std::this_thread::get_id());
+
         sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
         wakeupfdChannel_.reset(new Channel(eventfd_, shared_from_this()));

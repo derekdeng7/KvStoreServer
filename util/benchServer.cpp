@@ -6,7 +6,7 @@
 
 namespace KvStoreServer{
 
-    BenchServer::BenchServer( uint16_t port)
+    BenchServer::BenchServer(uint16_t port)
       : port_(port),
         server_(nullptr),
         thread_(nullptr)
@@ -48,7 +48,8 @@ namespace KvStoreServer{
 
             if(!strcasecmp(argVec_[0].c_str(), "quit"))
             {
-                exit(0);
+                server_->Close();
+                return;
             }
         }
     }
@@ -57,5 +58,4 @@ namespace KvStoreServer{
     {
         server_->Send(sockfd, message);
     }
-
 }

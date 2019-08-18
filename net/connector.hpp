@@ -10,7 +10,7 @@
 
 namespace KvStoreServer{
 
-    class Connector : public std::enable_shared_from_this<Connector>
+    class Connector
     {
     public:
         Connector(std::shared_ptr<Socket> socket_, std::shared_ptr<EventLoop> loop);

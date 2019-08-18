@@ -49,7 +49,7 @@ namespace KvStoreServer{
         else
         {
             void (Connector::*fp)(const std::string& message) = &Connector::SendInLoop;
-            loop_->RunInLoop(std::bind(fp, shared_from_this(), message));
+            loop_->RunInLoop(std::bind(fp, this, message));
         }
     }
 
@@ -84,7 +84,7 @@ namespace KvStoreServer{
 
     void Connector::Shutdown()
     {
-        loop_->RunInLoop(std::bind(&Connector::ShutdownInLoop, shared_from_this()));
+        loop_->RunInLoop(std::bind(&Connector::ShutdownInLoop, this));
     }
 
     void Connector::ShutdownInLoop()
@@ -94,7 +94,7 @@ namespace KvStoreServer{
     
     void Connector::ForceClose()
     {
-        loop_->QueueInLoop(std::bind(&Connector::ForceCloseInLoop, shared_from_this()));
+        loop_->QueueInLoop(std::bind(&Connector::ForceCloseInLoop, this));
     }
 
     void Connector::ForceCloseInLoop()

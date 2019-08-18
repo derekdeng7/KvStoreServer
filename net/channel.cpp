@@ -4,7 +4,7 @@
 
 namespace KvStoreServer{
 
-    Channel::Channel(int fd, std::shared_ptr<EventLoop> loop)
+    Channel::Channel(int fd, std::weak_ptr<EventLoop> loop)
        :fd_(fd),
         event_(0),
         revent_(0),
@@ -19,18 +19,32 @@ namespace KvStoreServer{
     void Channel::AddChannel()
     {
         event_ |= EPOLLIN;
-        loop_->AddChannel(this);
+
+        auto loop = loop_.lock();
+        if(loop)
+        {
+            loop->AddChannel(this);
+        }
     }
 
     void Channel::RemoveChannel()
     {
         DisableAll();
-        loop_->RemoveChannel(this);
+       
+       auto loop = loop_.lock();
+        if(loop)
+        {
+            loop->RemoveChannel(this);
+        }
     }
 
     void Channel::UpdateChannel()
     {
-        loop_->Updatechannel(this);
+        auto loop = loop_.lock();
+        if(loop)
+        {
+            loop->Updatechannel(this);
+        }
     }
 
     void Channel::HandleEvent()

@@ -62,7 +62,8 @@ namespace KvStoreServer{
 
             if(!strcasecmp(argVec_[0].c_str(), "quit"))
             {
-                exit(0);
+                client_->Close();
+                return;
             }
             else if(!strcasecmp(argVec_[0].c_str(), "help"))
             {
