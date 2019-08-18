@@ -20,7 +20,7 @@ void TestKvClient()
 
 void TestBenchClient()
 {
-    BenchClient client("127.0.0.1", 8888, 1000, 8192, 2048);
+    BenchClient client("127.0.0.1", 8888, 1000, 16384, 512);
     client.StartBench();
 }
 

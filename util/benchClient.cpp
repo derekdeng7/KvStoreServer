@@ -11,6 +11,7 @@ namespace KvStoreServer{
       : ip_(ip),
         port_(port),
         loop_(nullptr),
+        stamp_(new TimeStamp()),
         sessions_(sessions),
         finishSessions_(0),
         messageNum_(messageNum),
